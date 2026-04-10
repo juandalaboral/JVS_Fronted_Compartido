@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Focus Produc</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<!-- LOADER -->
+<div id="loader">Cargando...</div>
+
+<!-- LOGIN -->
+<div id="login" class="modulo active">
+
+  <h1>Focus Producciones</h1>
+
+  <div class="cuadro">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Contraseña">
+    <button onclick="login()">Iniciar sesión</button>
+    <div id="error"></div>
+  </div>
+
+  <div class="links">
+    <a href="#" onclick="mostrar('registro')">Registrate aquí</a> |
+    <a href="#" onclick="mostrar('recuperar')">Olvidaste contraseña</a>
+  </div>
+
+</div>
+
+<!-- REGISTRO -->
+<div id="registro" class="modulo">
+
+  <h2>Registro</h2>
+
+  <input placeholder="Nombre">
+  <input placeholder="Apellidos">
+  <input type="email" placeholder="Correo">
+
+  <input id="pass" type="password" placeholder="Contraseña">
+  <button onclick="togglePass()">Mostrar / Ocultar</button>
+
+  <input placeholder="Teléfono">
+
+  <select id="pais" onchange="ciudades()">
+    <option>Colombia</option>
+    <option>México</option>
+    <option>España</option>
+    <option>Argentina</option>
+    <option>Chile</option>
+  </select>
+
+  <select id="ciudad"></select>
+
+  <button onclick="mostrar('login')">Volver</button>
+
+</div>
+
+<!-- RECUPERAR CONTRASEÑA -->
+<div id="recuperar" class="modulo">
+
+  <h2>Recuperar contraseña</h2>
+
+  <input placeholder="Correo">
+  <button onclick="alert('Correo enviado correctamente')">Enviar código</button>
+  <button onclick="mostrar('login')">Volver</button>
+
+</div>
+
+<!-- EVENTOS -->
+<div id="eventos" class="modulo">
+
+  <h2>Eventos Disponibles</h2>
+
+  <div class="eventos">
+
+    <div class="evento">
+      <img src="imagenes/feid.jpg.jpeg" alt="Feid">
+      <h3>Feid</h3>
+      <p>Fecha: 10/08/2026</p>
+      <p>Edad: +18</p>
+      <p>Concierto en vivo</p>
+      <button onclick="mostrar('mapa')">Comprar Boletas</button>
+    </div>
+
+    <div class="evento">
+      <img src="imagenes/karolg.jpeg.jpeg" alt="Karol G">
+      <h3>Karol G</h3>
+      <p>Fecha: 12/08/2026</p>
+      <p>Edad: +16</p>
+      <p>Concierto</p>
+      <button onclick="mostrar('mapa')">Comprar Boletas</button>
+    </div>
+
+    <div class="evento">
+      <img src="imagenes/doom.jpg.jpg" alt="Doom">
+      <h3>Doom</h3>
+      <p>Fecha: 15/08/2026</p>
+      <p>Edad: +18</p>
+      <p>Festival</p>
+      <button onclick="mostrar('mapa')">Comprar Boletas</button>
+    </div>
+
+    <div class="evento">
+      <img src="imagenes/badbunny.jpg.jpeg" alt="Bad Bunny">
+      <h3>Bad Bunny</h3>
+      <p>Fecha: 20/08/2026</p>
+      <p>Edad: +16</p>
+      <p>Show musical</p>
+      <button onclick="mostrar('mapa')">Comprar Boletas</button>
+    </div>
+
+    <div class="evento">
+      <img src="imagenes/baswell.jpg.jpg" alt="Baswell">
+      <h3>Baswell</h3>
+      <p>Fecha: 25/08/2026</p>
+      <p>Edad: +18</p>
+      <p>RAVE</p>
+      <button onclick="mostrar('mapa')">Comprar Boletas</button>
+    </div>
+
+    <div class="evento">
+      <img src="imagenes/romeo.jpg.jpg" alt="Romeo Santos">
+      <h3>Romeo Santos</h3>
+      <p>Fecha: 30/08/2026</p>
+      <p>Edad: +16</p>
+      <p>Concierto</p>
+      <button onclick="mostrar('mapa')">Comprar Boletas</button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- MAPA DE ASIENTOS -->
+<div id="mapa" class="modulo">
+
+  <h2>Seleccionar Asientos</h2>
+
+  <div class="escenario">ESCENARIO</div>
+
+  <div class="mapa">
+    <div class="zona" id="graderia1"><h4>Gradería Izquierda</h4></div>
+    <div class="zona" id="vip"><h4>VIP</h4></div>
+    <div class="zona" id="graderia2"><h4>Gradería Derecha</h4></div>
+  </div>
+
+  <button onclick="pagar()">Pagar asientos seleccionados</button>
+  <button onclick="mostrar('eventos')">Volver a eventos</button>
+
+</div>
+
+<!-- RESULTADO -->
+<div id="resultado" class="modulo">
+
+  <h2>Entradas Compradas</h2>
+
+  <div id="lista"></div>
+
+  <img id="qr" alt="Código QR">
+
+  <br><br>
+
+  <button onclick="window.print()">Descargar PDF</button>
+  <button onclick="mostrar('eventos')">Volver a eventos</button>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

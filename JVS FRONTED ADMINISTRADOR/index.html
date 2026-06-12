@@ -42,6 +42,8 @@
     <!-- Tabs -->
     <div class="tab" onclick="abrirCoord()">Coordinador de Eventos</div>
     <div class="tab" onclick="abrirVend()">Vendedor</div>
+    <div class="tab" onclick="abrirVistaUsuario()">Vista usuario</div>
+    <div class="tab" onclick="abrirReservas()">Reservas de eventos</div>
 
 </div><!-- /container -->
 
@@ -58,8 +60,8 @@
 
         <button onclick="cerrarCoord()" class="cerrar-btn">Cerrar</button>
         <br><br>
-        <a href="file:///C:/Users/sngcw/Documents/GitHub/JVS_Fronted_Compartido/JVS_FRONTED_BOOKING/index.html">
-    <button>Raider Técnico</button>
+        <a href="../JVS_FRONTED_BOOKING/index.html">
+    <button>Rider Técnico</button>
 </a>
         
         <button onclick="verProveedores()">Ver proveedores</button>
@@ -70,50 +72,124 @@
 <!-- ========== MODAL: VENDEDOR ========== -->
 <div id="ventanaVend" class="modal">
     <div class="modal-box">
+
         <img src="imagen/PERFIL 3.jpg" class="avatar" alt="Vendedor">
+
         <h2>Vendedor</h2>
+
         <p><b>Usuario:</b> user01</p>
         <p><b>Contraseña:</b> *********</p>
 
-        <button onclick="verSalario()">Ver salario</button>
-        <br><br>
-        <button onclick="verInventarioVend()">Ver inventario</button>
-        <br><br>
-        <button onclick="cerrarVend()" class="cerrar-btn">Cerrar</button>
-    </div>
+        <button onclick="verSalario()">
+            Ver salario
+        </button>
 
-<a href="file:///C:/Users/sngcw/Documents/GitHub/JVS_Fronted_Compartido/JVS_FRONTED_BOOKING/index.html">
-    <button style="
-        padding: 10px 20px;
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 16px;
-    ">
-        Raider Técnico
-    </button>
-</a>
+        <br><br>
+
+        <button onclick="verInventarioVend()">
+            Ver inventario
+        </button>
+
+        <br><br>
+
+        <button onclick="verVentasMes()">
+            Ventas del mes
+        </button>
+
+        <br><br>
+
+        <button onclick="cerrarVend()" class="cerrar-btn">
+            Cerrar
+        </button>
+
+    </div>
+</div>
 
 <!-- ========== MODAL: INVENTARIO ========== -->
 <div id="inventarioVend" class="modal">
-    <div class="modal-box" style="text-align:left; width:380px; max-height:80vh; overflow-y:auto;">
-        <h2 style="text-align:center;">Inventario</h2>
+
+    <div class="modal-box inventario-box">
+
+        <div class="inventario-header">
+
+            <h2>📦 Inventario</h2>
+
+            <button onclick="cerrarInventario()" class="cerrar-btn">
+                ✖
+            </button>
+
+        </div>
 
         <div id="listaInventario"></div>
 
-        <br>
-        <button onclick="cerrarInventario()" class="cerrar-btn">Cerrar</button>
-        <br><br>
-        <button onclick="guardarCambios()">Guardar cambios</button>
-        <br><br>
-        <button onclick="agregarProducto()">Agregar producto</button>
+        <div class="inventario-botones">
+
+            <button onclick="agregarProducto()" class="btn-agregar">
+                ➕ Agregar producto
+            </button>
+
+            <button onclick="guardarCambios()" class="btn-guardar">
+                💾 Guardar cambios
+            </button>
+
+        </div>
+
     </div>
+
 </div>
 
 
 <!-- ========== MODAL: SALARIO ========== -->
+ <!-- ========== MODAL AGREGAR / EDITAR PRODUCTO ========== -->
+
+<div id="modalProducto" class="modal">
+
+    <div class="modal-box">
+
+        <h2 id="tituloModalProducto">Agregar producto</h2>
+
+        <input
+            type="text"
+            id="nombreProducto"
+            placeholder="Nombre del producto">
+
+        <input
+            type="number"
+            id="precioProducto"
+            placeholder="Precio">
+
+        <input
+            type="number"
+            id="stockProducto"
+            placeholder="Stock disponible">
+
+        <label style="display:block; margin-top:15px;">
+            Imagen del producto
+        </label>
+
+        <input
+            type="file"
+            id="imagenProducto"
+            accept="image/*">
+
+        <br><br>
+
+        <button onclick="guardarProducto()">
+            Guardar
+        </button>
+
+        <button
+            onclick="cerrarModalProducto()"
+            class="cerrar-btn">
+
+            Cancelar
+
+        </button>
+
+    </div>
+
+</div>
+
 <div id="ventanaSalario" class="modal">
     <div class="modal-box" style="width:400px; max-height:80vh; overflow-y:auto;">
         <h2>Salario Vendedores</h2>
@@ -133,6 +209,17 @@
 </div>
 
 
+
+<!-- ========== MODAL: RESERVAS DE EVENTOS ========== -->
+<div id="ventanaReservas" class="modal">
+    <div class="modal-box inventario-box">
+        <div class="inventario-header">
+            <h2>Reservas de eventos</h2>
+            <button onclick="cerrarReservas()" class="cerrar-btn">X</button>
+        </div>
+        <div id="listaReservasEventos"></div>
+    </div>
+</div>
 <!-- ========== SCRIPT ========== -->
 <script src="script.js"></script>
 </body>

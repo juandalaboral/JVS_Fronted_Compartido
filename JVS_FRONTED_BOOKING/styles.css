@@ -287,3 +287,40 @@ footer {
     background: rgba(3, 1, 1, 0.8);
     color: rgb(156, 58, 58);
 }
+
+.bloque-fecha-reserva {
+    margin: 12px 0 16px;
+    padding: 14px;
+    border: 1px solid rgba(255, 64, 129, 0.45);
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(49, 10, 23, 0.95), rgba(24, 18, 4, 0.9));
+    box-shadow: 0 8px 18px rgba(105, 10, 168, 0.22);
+    text-align: left;
+}
+
+.bloque-fecha-reserva label {
+    display: block;
+    margin-bottom: 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.bloque-fecha-reserva select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 2px solid #ff4081;
+    border-radius: 25px;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    font-weight: bold;
+    outline: none;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(255, 64, 129, 0.35);
+}
+
+.bloque-fecha-reserva select:focus {
+    border-color: #f50057;
+    box-shadow: 0 0 16px rgba(245, 0, 87, 0.65);
+}

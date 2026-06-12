@@ -1,10 +1,31 @@
-// ===== DATOS DE PRODUCTOS =====
 const productos = [
-    { nombre: "Aguardiente Amarillo", cantidad: 10, precio: 25000, img: "imagen/aguardiente.G" },
-    { nombre: "Cerveza Águila",        cantidad: 20, precio: 4000,  img: "aguila.WEBP" },
-    { nombre: "Cerveza Corona",        cantidad: 15, precio: 6000,  img: "corona.WEBP" },
-    { nombre: "Whisky",                cantidad: 8,  precio: 80000, img: "whisky.WEBP" }
+    {
+        nombre: "Aguardiente Amarillo",
+        stock: 10,
+        precio: 25000,
+        img: "imagen/aguardiente.jpg"
+    },
+    {
+        nombre: "Cerveza Águila",
+        stock: 20,
+        precio: 4000,
+        img: "imagen/aguila.webp"
+    },
+    {
+        nombre: "Cerveza Corona",
+        stock: 15,
+        precio: 6000,
+        img: "imagen/corona.webp"
+    },
+    {
+        nombre: "Whisky",
+        stock: 8,
+        precio: 80000,
+        img: "imagen/whisky.webp"
+    }
 ];
+
+let productoEditando = null;
 
 // ===== LOGIN =====
 function login() {
@@ -27,6 +48,11 @@ function showOptions() {
 
 function changePhoto(src) {
     document.getElementById("mainPhoto").src = src;
+}
+
+// ===== NAVEGACION =====
+function abrirVistaUsuario() {
+    window.location.href = "../JVS FRONTED USUARIO/index.html";
 }
 
 // ===== MODAL COORDINADOR =====
@@ -67,72 +93,220 @@ function cerrarInventario() {
 }
 
 function renderInventario() {
+
     const contenedor = document.getElementById("listaInventario");
+
     contenedor.innerHTML = "";
 
     productos.forEach((p, i) => {
+
         contenedor.innerHTML += `
-            <div class="producto-item">
-                <div>
-                    <b>${p.nombre}</b><br><br>
-                    Cantidad: ${p.cantidad}
-                    <div style="margin-top:5px;">
-                        <button onclick="sumar(${i})">+</button>
-                        <button onclick="restar(${i})">-</button>
-                        <button onclick="eliminarProducto(${i})" style="background:#7a0018;border:none;">Eliminar</button>
-                    </div>
-                    Precio: $${p.precio.toLocaleString("es-CO")}
+
+        <div class="producto-item">
+
+            <img src="${p.img}" class="inventario-img">
+
+            <div>
+
+                <b>${p.nombre}</b><br><br>
+
+                Precio: $${p.precio.toLocaleString("es-CO")}<br>
+
+                Stock disponible: ${p.stock} unidades
+
+                <div style="margin-top:10px;">
+
+                    <button onclick="editarProducto(${i})">
+                        Editar
+                    </button>
+
+                    <button onclick="eliminarProducto(${i})"
+                    style="background:#7a0018;border:none;">
+                        Eliminar
+                    </button>
+
                 </div>
-                <img src="${p.img}" class="inventario-img">
+
             </div>
+
+        </div>
+
         `;
-    });
-}
 
-function sumar(i) {
-    productos[i].cantidad++;
-    renderInventario();
-}
+      });
 
-function restar(i) {
-    if (productos[i].cantidad > 0) {
-        productos[i].cantidad--;
-        renderInventario();
-    }
 }
 
 function eliminarProducto(i) {
+
     if (confirm("¿Seguro que quieres eliminar este producto?")) {
+
         productos.splice(i, 1);
+
         renderInventario();
+
     }
+
 }
 
-function agregarProducto() {
-    const nombre   = prompt("Nombre del producto:");
-    const cantidad = prompt("Cantidad:");
-    const precio   = prompt("Precio:");
+function editarProducto(i){
 
-    if (nombre && cantidad && precio) {
-        productos.push({
-            nombre:   nombre,
-            cantidad: parseInt(cantidad),
-            precio:   parseInt(precio),
-            img:      "default.jpg"
-        });
-        renderInventario();
-    }
+    productoEditando = i;
+
+    document.getElementById("tituloModalProducto").innerText = "Editar producto";
+
+    document.getElementById("nombreProducto").value = productos[i].nombre;
+
+    document.getElementById("precioProducto").value = productos[i].precio;
+
+    document.getElementById("stockProducto").value = productos[i].stock;
+
+    document.getElementById("imagenProducto").value = "";
+
+    document.getElementById("modalProducto").style.display = "flex";
+
+}
+
+function agregarProducto(){
+
+    productoEditando = null;
+
+    document.getElementById("tituloModalProducto").innerText = "Agregar producto";
+
+    document.getElementById("nombreProducto").value = "";
+
+    document.getElementById("precioProducto").value = "";
+
+    document.getElementById("stockProducto").value = "";
+
+    document.getElementById("imagenProducto").value = "";
+
+    document.getElementById("modalProducto").style.display = "flex";
+
 }
 
 function guardarCambios() {
     alert("Cambios guardados correctamente");
 }
 
+function verVentasMes() {
+    alert("Aun no hay ventas registradas este mes.");
+}
+
+
+// ===== RESERVAS DE EVENTOS =====
+function abrirReservas() {
+    document.getElementById("ventanaReservas").style.display = "flex";
+    renderReservasAdministrador();
+}
+
+function cerrarReservas() {
+    document.getElementById("ventanaReservas").style.display = "none";
+}
+
+function renderReservasAdministrador() {
+    const contenedor = document.getElementById("listaReservasEventos");
+    if (!contenedor) return;
+
+    const reservas = JSON.parse(localStorage.getItem("reservas_eventos")) || [];
+
+    if (reservas.length === 0) {
+        contenedor.innerHTML = "<p style='text-align:center;'>Todavia no hay reservas registradas.</p>";
+        return;
+    }
+
+    contenedor.innerHTML = reservas.map(reserva => {
+        const invitados = reserva.invitados && reserva.invitados.length
+            ? reserva.invitados.join(", ")
+            : "Sin invitados registrados";
+
+        return `
+            <div class="producto-item">
+                <div>
+                    <b>${reserva.artista}</b><br><br>
+                    Fecha reservada: ${reserva.fecha}<br>
+                    Invitados (${reserva.totalInvitados || 0}): ${invitados}<br>
+                    Actualizada: ${reserva.actualizada || "---"}
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+window.addEventListener("storage", function(event) {
+    if (event.key === "reservas_eventos") {
+        renderReservasAdministrador();
+    }
+});
 // ===== OTRAS FUNCIONES =====
 function verInventario() {
     window.location.href = "raider.html";
 }
+function cerrarModalProducto(){
+
+    document.getElementById("modalProducto").style.display = "none";
+
+}
+
+function guardarProducto(){
+
+    const nombre = document.getElementById("nombreProducto").value;
+
+    const precio = parseInt(document.getElementById("precioProducto").value);
+
+    const stock = parseInt(document.getElementById("stockProducto").value);
+
+    const archivo = document.getElementById("imagenProducto").files[0];
+
+    if (!nombre || Number.isNaN(precio) || Number.isNaN(stock)) {
+        alert("Completa nombre, precio y stock antes de guardar.");
+        return;
+    }
+
+    let imagen = "imagen/default.png";
+
+    if(archivo){
+
+        imagen = URL.createObjectURL(archivo);
+
+    }
+
+    if(productoEditando === null){
+
+        productos.push({
+
+            nombre,
+
+            precio,
+
+            stock,
+
+            img: imagen
+
+        });
+
+    }else{
+
+        productos[productoEditando].nombre = nombre;
+
+        productos[productoEditando].precio = precio;
+
+        productos[productoEditando].stock = stock;
+
+        if(archivo){
+
+            productos[productoEditando].img = imagen;
+
+        }
+
+    }
+
+    cerrarModalProducto();
+
+    renderInventario();
+
+}
 
 function verProveedores() {
-    alert("Aquí se mostrarán los proveedores");
+    window.location.href = "../JVS FRONTED PROVEEDORES/proveedores.html";
 }

@@ -1,5 +1,55 @@
 let artistaIdActual = "";
 
+function obtenerNombreArtista(id) {
+    const tarjeta = document.getElementById(id);
+    return tarjeta ? tarjeta.querySelector('h3').innerText : id;
+}
+
+function obtenerFechasDisponibles(id) {
+    const tarjeta = document.getElementById(id);
+    if (!tarjeta) return [];
+
+    return Array.from(tarjeta.querySelectorAll('.lista-agenda li'))
+        .map(item => item.innerText.replace(/^\D*(?=\d)/, '').trim())
+        .filter(Boolean);
+}
+
+function cargarFechasReserva(id) {
+    const select = document.getElementById('selectFechaReserva');
+    const fechaGuardada = localStorage.getItem('fecha_reserva_' + id) || '';
+    const fechas = obtenerFechasDisponibles(id);
+
+    select.innerHTML = '<option value="">Seleccione una fecha disponible</option>';
+    fechas.forEach(fecha => {
+        const option = document.createElement('option');
+        option.value = fecha;
+        option.textContent = fecha;
+        if (fecha === fechaGuardada) option.selected = true;
+        select.appendChild(option);
+    });
+}
+
+function guardarReservaAdministrador(id, fecha) {
+    const invitados = JSON.parse(localStorage.getItem('inv_' + id)) || [];
+    const reservas = JSON.parse(localStorage.getItem('reservas_eventos')) || [];
+    const reserva = {
+        id: id,
+        artista: obtenerNombreArtista(id),
+        fecha: fecha,
+        invitados: invitados.map(inv => inv.nombre),
+        totalInvitados: invitados.length,
+        actualizada: new Date().toLocaleString('es-CO')
+    };
+
+    const filtradas = reservas.filter(item => item.id !== id);
+    filtradas.push(reserva);
+    localStorage.setItem('reservas_eventos', JSON.stringify(filtradas));
+}
+
+function eliminarReservaAdministrador(id) {
+    const reservas = JSON.parse(localStorage.getItem('reservas_eventos')) || [];
+    localStorage.setItem('reservas_eventos', JSON.stringify(reservas.filter(item => item.id !== id)));
+}
 window.onload = function () {
     const ids = ['art1', 'art2', 'art3', 'art4', 'art5', 'art6'];
     ids.forEach(id => {
@@ -59,6 +109,7 @@ function abrirInvitados(id) {
     const btnQuitar = document.getElementById('btnQuitarReserva');
     btnQuitar.style.display = localStorage.getItem('reserva_' + id) === 'true' ? "block" : "none";
 
+    cargarFechasReserva(id);
     renderizarInvitados();
     document.getElementById('modalInvitados').style.display = "block";
 }
@@ -195,8 +246,17 @@ function eliminarRider(id) {
 
 // --- LÓGICA DE RESERVA Y QUITAR RESERVA ---
 function confirmarYReservar() {
-    if (confirm("¿Deseas finalizar y reservar?")) {
+    const fechaSeleccionada = document.getElementById('selectFechaReserva').value;
+
+    if (!fechaSeleccionada) {
+        alert("Selecciona la fecha que desea reservar el invitado.");
+        return;
+    }
+
+    if (confirm("¿Deseas finalizar y reservar esta fecha?")) {
         localStorage.setItem('reserva_' + artistaIdActual, 'true');
+        localStorage.setItem('fecha_reserva_' + artistaIdActual, fechaSeleccionada);
+        guardarReservaAdministrador(artistaIdActual, fechaSeleccionada);
         marcarComoReservado(artistaIdActual);
         cerrarModalInvitados();
     }
@@ -205,6 +265,8 @@ function confirmarYReservar() {
 function quitarReserva() {
     if (confirm("¿Estás seguro de quitar la reserva de este artista? Se perderá el bloqueo visual.")) {
         localStorage.removeItem('reserva_' + artistaIdActual);
+        localStorage.removeItem('fecha_reserva_' + artistaIdActual);
+        eliminarReservaAdministrador(artistaIdActual);
         location.reload();
     }
 }
@@ -214,7 +276,10 @@ function marcarComoReservado(id) {
     if (tarjeta) {
         tarjeta.classList.add('reservado-visual');
         const badge = tarjeta.querySelector('.disponible');
-        if (badge) badge.innerText = "● RESERVADO";
+        if (badge) {
+            const fecha = localStorage.getItem('fecha_reserva_' + id);
+            badge.innerText = fecha ? "● RESERVADO - " + fecha : "● RESERVADO";
+        }
         const btnPrincipal = tarjeta.querySelector('.btn-principal');
         if (btnPrincipal) {
             btnPrincipal.innerText = "Reserva Exitosa ✓";

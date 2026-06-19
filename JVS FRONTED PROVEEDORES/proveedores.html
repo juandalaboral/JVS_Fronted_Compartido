@@ -49,6 +49,10 @@
   </div>
 
   <!-- MÓDULO DE PROVEEDORES -->
+  <div id="adminReturnArea" class="admin-return-area">
+    <button class="admin-return" onclick="volverAdministrador()">Menu administrador</button>
+  </div>
+
   <div id="module" class="module">
 
     <h2 id="eventTitle"></h2>
@@ -58,6 +62,14 @@
     <button class="save"   onclick="save()">Guardar</button>
     <button class="cancel" onclick="cancel()">Cancelar</button>
 
+  </div>
+
+  <div id="providerModule" class="module provider-module">
+    <h2 id="providerTitle"></h2>
+    <p class="helper-text">Selecciona una o varias empresas proveedoras para este evento.</p>
+    <div id="providerOptions" class="provider-options"></div>
+    <button class="save" onclick="guardarEmpresasEvento()">Guardar proveedores</button>
+    <button class="cancel" onclick="cerrarEditorProveedores()">Cancelar</button>
   </div>
 
 </div>

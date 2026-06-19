@@ -22,14 +22,39 @@ body {
   display: flex;
 }
 
+.back-admin-login {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px !important;
+  padding: 0 !important;
+  border-radius: 50%;
+  background: black !important;
+  color: white;
+  border: 2px solid #7a0018 !important;
+  box-shadow: 0 0 12px rgba(122, 0, 24, 0.8) !important;
+  font-size: 24px;
+  line-height: 1;
+  z-index: 20;
+}
+
+.back-admin-login:hover {
+  background: #7a0018 !important;
+  border-color: #ff0033 !important;
+  box-shadow: 0 0 22px #ff0033 !important;
+}
+
 /* cuadro login */
 .cuadro {
-  background: rgba(146, 42, 4, 0.897);
-  padding: 30px;
+  background: rgba(0, 0, 0, 0.82);
+  padding: 40px 46px;
   border-radius: 10px;
-  width: 300px;
+  width: min(390px, 82vw);
   text-align: center;
-  box-shadow: 0 0 10px rgba(129, 23, 23, 0.3);
+  border: 4px solid #7a0018;
+  box-shadow: 0 0 26px rgba(122, 0, 24, 0.55);
 }
 
 input, select {
@@ -38,10 +63,127 @@ input, select {
   margin: 5px;
 }
 
+#registro input,
+#registro select {
+  width: min(380px, 88vw);
+  box-sizing: border-box;
+  padding: 11px 14px;
+  margin: 7px 0;
+  background: black;
+  color: white;
+  border: 2px solid #7a0018;
+  border-radius: 10px;
+  outline: none;
+  font-weight: bold;
+  box-shadow: none;
+  transition: 0.3s;
+}
+
+#recuperar input {
+  width: min(320px, 88vw);
+  box-sizing: border-box;
+  padding: 11px 14px;
+  margin: 10px 0;
+  background: black;
+  color: white;
+  border: 2px solid #7a0018;
+  border-radius: 10px;
+  box-shadow: none;
+  outline: none;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+#recuperar input::placeholder {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+#recuperar input:hover,
+#recuperar input:focus {
+  border-color: #ff0033;
+  box-shadow: 0 0 18px #ff0033;
+}
+
+#login input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 16px;
+  margin: 10px 0 28px;
+  background: black;
+  color: white;
+  border: 2px solid #7a0018;
+  border-radius: 10px;
+  outline: none;
+  text-align: center;
+  font-size: 16px;
+  box-shadow: none;
+  transition: 0.3s;
+}
+
+#login input::placeholder {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+#login input:focus {
+  border-color: #ff0033;
+  box-shadow: 0 0 16px rgba(255, 0, 51, 0.65);
+}
+
+#registro input::placeholder {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+#registro input:hover,
+#registro input:focus,
+#registro select:hover,
+#registro select:focus {
+  background: black;
+  border-color: #ff0033;
+  box-shadow: 0 0 18px #ff0033;
+}
+
 button {
   padding: 8px 15px;
   margin-top: 10px;
   cursor: pointer;
+}
+
+#login button,
+#registro button,
+#recuperar button {
+  width: auto;
+  min-width: 135px;
+  max-width: 220px;
+  background: #7a0018;
+  color: white;
+  border: 2px solid #ff0033;
+  padding: 10px 18px;
+  border-radius: 10px;
+  box-shadow: 0 0 14px #ff0033;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+#login button:hover,
+#registro button:hover,
+#recuperar button:hover {
+  background: black;
+  border-color: #7a0018;
+  box-shadow: 0 0 20px #7a0018;
+  transform: scale(1.05);
+}
+
+#login button {
+  background: black;
+  border-color: #7a0018;
+  box-shadow: 0 0 14px rgba(122, 0, 24, 0.8);
+}
+
+#login button:hover,
+#login button:active {
+  background: #7a0018;
+  border-color: #ff0033;
+  box-shadow: 0 0 22px #ff0033;
 }
 
 .links {
@@ -99,6 +241,21 @@ button {
   padding: 40px;
 }
 
+#eventos.modulo {
+  justify-content: flex-start;
+  align-items: stretch;
+  height: auto;
+  min-height: 100vh;
+  overflow-y: auto;
+  padding: 30px 0 50px;
+}
+
+#eventos .eventos {
+  width: min(1100px, calc(100% - 40px));
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
 .evento {
   background: linear-gradient(to right, rgba(255, 0, 0, 0.788), rgba(255, 166, 0, 0.795));
   padding: 10px;
@@ -108,8 +265,36 @@ button {
 
 .evento img {
   width: 100%;
-  height: 150px;
+  height: 230px;
+  object-fit: cover;
+  object-position: center;
   background: #776f6f;
+  border-radius: 8px;
+}
+
+.evento button,
+#mapa > button {
+  border: none;
+  border-radius: 24px;
+  padding: 11px 18px;
+  background: linear-gradient(90deg, #2f00ff, #ff0077, #ffbf00);
+  background-size: 220% auto;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 0 16px rgba(255, 0, 119, 0.55);
+  animation: saltarBoton 1.8s ease-in-out infinite;
+}
+
+.evento button:hover,
+#mapa > button:hover {
+  background-position: right center;
+  transform: translateY(-3px) scale(1.06);
+  box-shadow: 0 0 24px rgba(255, 191, 0, 0.85);
+}
+
+@keyframes saltarBoton {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 /* mapa */
@@ -160,6 +345,23 @@ button {
   animation: brillo 5s linear infinite;
 }
 
+#recuperar h2 {
+  font-size: 42px;
+  text-align: center;
+  margin-bottom: 25px;
+  background: linear-gradient(90deg, red, orange, yellow, rgb(255, 0, 119), blue, magenta);
+  background-size: 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: brillo 5s linear infinite, olaTitulo 1.8s ease-in-out infinite;
+  text-shadow: none;
+}
+
+@keyframes olaTitulo {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
 @keyframes brillo {
   0%   { background-position: 0%; }
   100% { background-position: 400%; }
@@ -175,4 +377,21 @@ button {
   font-size: 45px;
   color: rgb(255, 17, 0);
   text-align: center;
+}
+
+@media (max-width: 900px) {
+  .eventos {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 620px) {
+  .eventos {
+    grid-template-columns: 1fr;
+    padding: 22px 0;
+  }
+
+  .evento img {
+    height: 210px;
+  }
 }

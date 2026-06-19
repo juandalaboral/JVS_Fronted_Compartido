@@ -141,38 +141,6 @@
     <div class="panel-raider">
         <h2 style="color:#c50b0b; border-bottom:2px solid #333;">Gestión de Requerimientos Técnicos</h2>
         <p>Selecciona un artista y vincula su Rider (.pdf, .doc):</p>
-        <div class="form-publicar-evento">
-            <h3>Publicar nuevo evento</h3>
-            <div class="form-grid-evento">
-                <input type="text" id="nuevoEventoNombre" placeholder="Nombre del evento o artista">
-                <select id="nuevoEventoTipo">
-                    <option value="">Selecciona tipo de evento</option>
-                    <option>Concierto</option>
-                    <option>Festivales</option>
-                    <option>Fiesta en Bar</option>
-                    <option>Pool Party</option>
-                    <option>Show Privado</option>
-                </select>
-                <select id="nuevoEventoLugar">
-                    <option value="">Selecciona una localidad</option>
-                    <option>Movistar Arena</option>
-                    <option>Hotel Paradise</option>
-                    <option>Pradera Box</option>
-                    <option>Club Campestre</option>
-                    <option>Trisquel Bar</option>
-                    <option>Aurora Discoteca</option>
-                    <option>Plaza mayor</option>
-                    <option>Finca Villa Sol</option>
-                    <option>Parque Simon Bolivar</option>
-                    <option>Vintage Disco</option>
-                </select>
-                <input type="date" id="nuevoEventoFecha1">
-                <input type="date" id="nuevoEventoFecha2">
-                <input type="date" id="nuevoEventoFecha3">
-                <input type="file" id="nuevoEventoFoto" accept="image/*">
-            </div>
-            <button class="btn btn-publicar-evento" onclick="publicarEventoNuevo()">Publicar evento</button>
-        </div>
 
         <div style="margin:20px 0; display:flex; gap:10px; align-items:center;">
             <select id="selectArtistaRider" style="padding:10px; border-radius:5px; flex-grow:1;">

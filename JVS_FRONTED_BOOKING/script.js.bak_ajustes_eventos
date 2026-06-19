@@ -1,5 +1,4 @@
 let artistaIdActual = "";
-let riderFiltroActual = null;
 
 const EVENTOS_BASE = [
     { id: 'art1', n: 'Feid' },
@@ -10,47 +9,16 @@ const EVENTOS_BASE = [
     { id: 'art6', n: 'Evento Rave' }
 ];
 
-const LOCALIDADES_EVENTO = [
-    'Movistar Arena',
-    'Hotel Paradise',
-    'Pradera Box',
-    'Club Campestre',
-    'Trisquel Bar',
-    'Aurora Discoteca',
-    'Plaza mayor',
-    'Finca Villa Sol',
-    'Parque Simon Bolivar',
-    'Vintage Disco'
-];
-
 function obtenerEventosPublicados() {
     return JSON.parse(localStorage.getItem('eventos_publicados')) || [];
-}
-
-function obtenerEventosBaseEliminados() {
-    return JSON.parse(localStorage.getItem('eventos_base_eliminados')) || [];
-}
-
-function guardarEventosBaseEliminados(eventos) {
-    localStorage.setItem('eventos_base_eliminados', JSON.stringify(eventos));
-}
-
-function obtenerEventosBaseVisibles() {
-    const eliminados = obtenerEventosBaseEliminados();
-    return EVENTOS_BASE.filter(evento => !eliminados.includes(evento.id));
 }
 
 function guardarEventosPublicados(eventos) {
     localStorage.setItem('eventos_publicados', JSON.stringify(eventos));
 }
 
-function eliminarEventoVistaUsuario(id) {
-    const cartelera = JSON.parse(localStorage.getItem('cartelera_usuario')) || [];
-    localStorage.setItem('cartelera_usuario', JSON.stringify(cartelera.filter(evento => evento.id !== id)));
-}
-
 function obtenerTodosEventos() {
-    return obtenerEventosBaseVisibles().concat(obtenerEventosPublicados().map(evento => ({
+    return EVENTOS_BASE.concat(obtenerEventosPublicados().map(evento => ({
         id: evento.id,
         n: evento.nombre
     })));
@@ -62,87 +30,21 @@ function crearTarjetaEvento(evento) {
     return `
         <div class="artista evento-dinamico" id="${evento.id}">
             <button class="btn-edit" onclick="abrirEditor('${evento.id}')">⚙️ Cambiar fechas</button>
-            <button class="btn-delete-evento" onclick="eliminarEventoPublicado('${evento.id}')">Eliminar</button>
             <img src="${evento.imagen}" alt="${evento.nombre}">
             <div class="info">
                 <h3>${evento.nombre}</h3>
                 <div class="agenda">
-                    <p class="disponible">● Agenda disponible</p>
+                    <p class="disponible">● Esperando rider</p>
                     <ul class="lista-agenda">
                         ${fechas}
                     </ul>
+                    <p class="lugar-evento">${evento.lugar}</p>
                 </div>
                 <button class="btn btn-principal" onclick="abrirInvitados('${evento.id}')">Reservar / Invitados</button>
-                <button class="btn" onclick="saltarARaider('${evento.id}')" style="background:#2196F3; font-size:12px;">Ver Rider Técnico</button>
+                <button class="btn" onclick="saltarARaider('${evento.id}')" style="background:#2196F3; font-size:12px;">Subir Rider Técnico</button>
             </div>
         </div>
     `;
-}
-
-
-function esEventoPublicado(id) {
-    return obtenerEventosPublicados().some(evento => evento.id === id);
-}
-
-function eliminarEventoPublicado(id) {
-    if (!confirm('¿Eliminar este evento publicado?')) return;
-
-    const eventos = obtenerEventosPublicados().filter(evento => evento.id !== id);
-    guardarEventosPublicados(eventos);
-    limpiarDatosEvento(id);
-    renderEventosPublicados();
-    actualizarSelectRider();
-    actualizarTablaRider();
-}
-
-function limpiarDatosEvento(id) {
-    localStorage.removeItem('reserva_' + id);
-    localStorage.removeItem('fecha_reserva_' + id);
-    localStorage.removeItem('inv_' + id);
-    localStorage.removeItem('rider_obj_' + id);
-    eliminarEventoVistaUsuario(id);
-    eliminarReservaAdministrador(id);
-}
-
-function eliminarEventoBooking(id) {
-    if (esEventoPublicado(id)) {
-        eliminarEventoPublicado(id);
-        return;
-    }
-
-    if (!confirm('¿Eliminar este evento de la cartelera?')) return;
-
-    const eliminados = obtenerEventosBaseEliminados();
-    if (!eliminados.includes(id)) {
-        eliminados.push(id);
-        guardarEventosBaseEliminados(eliminados);
-    }
-
-    limpiarDatosEvento(id);
-    const tarjeta = document.getElementById(id);
-    if (tarjeta) tarjeta.remove();
-    actualizarSelectRider();
-    actualizarTablaRider();
-}
-
-function prepararBotonesEliminarEventosBase() {
-    EVENTOS_BASE.forEach(evento => {
-        const tarjeta = document.getElementById(evento.id);
-        if (!tarjeta || tarjeta.querySelector('.btn-delete-evento')) return;
-
-        const boton = document.createElement('button');
-        boton.className = 'btn-delete-evento';
-        boton.textContent = 'Eliminar';
-        boton.onclick = () => eliminarEventoBooking(evento.id);
-        tarjeta.insertBefore(boton, tarjeta.querySelector('img'));
-    });
-}
-
-function aplicarEventosBaseEliminados() {
-    obtenerEventosBaseEliminados().forEach(id => {
-        const tarjeta = document.getElementById(id);
-        if (tarjeta) tarjeta.remove();
-    });
 }
 
 function renderEventosPublicados() {
@@ -154,32 +56,16 @@ function renderEventosPublicados() {
     contenedor.insertAdjacentHTML('beforeend', eventos.map(crearTarjetaEvento).join(''));
 }
 
-function actualizarVisibilidadFormularioEvento() {
-    const formulario = document.querySelector('.form-publicar-evento');
-    if (!formulario) return;
-
-    formulario.style.display = riderFiltroActual ? 'none' : 'block';
-}
 function actualizarSelectRider() {
     const select = document.getElementById('selectArtistaRider');
     if (!select) return;
 
     const valorActual = select.value;
-    const eventos = riderFiltroActual
-        ? obtenerTodosEventos().filter(evento => evento.id === riderFiltroActual)
-        : obtenerTodosEventos();
-
-    select.innerHTML = eventos
+    select.innerHTML = obtenerTodosEventos()
         .map(evento => `<option value="${evento.id}">${evento.n}</option>`)
         .join('');
 
-    if (riderFiltroActual) {
-        select.value = riderFiltroActual;
-        select.disabled = true;
-    } else {
-        select.disabled = false;
-        if (valorActual) select.value = valorActual;
-    }
+    if (valorActual) select.value = valorActual;
 }
 
 function formatearFechaEvento(valor) {
@@ -195,7 +81,6 @@ function formatearFechaEvento(valor) {
 
 function limpiarFormularioEvento() {
     document.getElementById('nuevoEventoNombre').value = '';
-    document.getElementById('nuevoEventoTipo').value = '';
     document.getElementById('nuevoEventoLugar').value = '';
     document.getElementById('nuevoEventoFecha1').value = '';
     document.getElementById('nuevoEventoFecha2').value = '';
@@ -205,7 +90,6 @@ function limpiarFormularioEvento() {
 
 function publicarEventoNuevo() {
     const nombre = document.getElementById('nuevoEventoNombre').value.trim();
-    const tipo = document.getElementById('nuevoEventoTipo').value;
     const lugar = document.getElementById('nuevoEventoLugar').value;
     const fechas = [
         document.getElementById('nuevoEventoFecha1').value,
@@ -214,8 +98,8 @@ function publicarEventoNuevo() {
     ].filter(Boolean).map(fecha => `${formatearFechaEvento(fecha)} - ${lugar}`);
     const archivo = document.getElementById('nuevoEventoFoto').files[0];
 
-    if (!nombre || !tipo || !lugar || fechas.length === 0 || !archivo) {
-        alert('Completa nombre, tipo de evento, localidad, al menos una fecha y una foto del evento.');
+    if (!nombre || !lugar || fechas.length === 0 || !archivo) {
+        alert('Completa nombre, localidad, al menos una fecha y una foto del evento.');
         return;
     }
 
@@ -225,7 +109,6 @@ function publicarEventoNuevo() {
         const nuevoEvento = {
             id: 'evento_' + Date.now(),
             nombre: nombre,
-            tipo: tipo,
             lugar: lugar,
             fechas: fechas,
             imagen: e.target.result
@@ -245,7 +128,6 @@ function publicarEventoNuevo() {
 }
 
 function volverAdministrador() {
-    localStorage.setItem('admin_entrar_menu', 'true');
     window.location.href = '../JVS FRONTED ADMINISTRADOR/index.html';
 }
 function obtenerNombreArtista(id) {
@@ -299,8 +181,6 @@ function eliminarReservaAdministrador(id) {
     localStorage.setItem('reservas_eventos', JSON.stringify(reservas.filter(item => item.id !== id)));
 }
 window.onload = function () {
-    prepararBotonesEliminarEventosBase();
-    aplicarEventosBaseEliminados();
     renderEventosPublicados();
     actualizarSelectRider();
 
@@ -317,108 +197,30 @@ function mostrarModulo(idMod) {
     document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
 
     document.getElementById('modulo-' + idMod).classList.add('active');
-    const botonModulo = document.getElementById('btn-' + idMod);
-    if (botonModulo) botonModulo.classList.add('active');
+    document.getElementById('btn-' + idMod).classList.add('active');
 
     if (idMod === 'raider') {
-        actualizarVisibilidadFormularioEvento();
         actualizarSelectRider();
         actualizarTablaRider();
     }
 }
 
-function abrirRaiderGeneral() {
-    riderFiltroActual = null;
-    actualizarVisibilidadFormularioEvento();
-    mostrarModulo('raider');
-}
-
 function saltarARaider(id) {
-    riderFiltroActual = id;
-    actualizarVisibilidadFormularioEvento();
     actualizarSelectRider();
     document.getElementById('selectArtistaRider').value = id;
     mostrarModulo('raider');
 }
 
-function escaparHTML(valor = '') {
-    return valor
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-}
-
-function separarFechaLugar(valor = '') {
-    const partes = valor.split(' - ');
-    if (partes.length < 2) {
-        return { fecha: valor.trim(), lugar: '' };
-    }
-
-    const lugar = partes.pop().trim();
-    return {
-        fecha: partes.join(' - ').trim(),
-        lugar
-    };
-}
-
-function crearOpcionesLugar(lugarActual = '') {
-    const lugares = lugarActual && !LOCALIDADES_EVENTO.includes(lugarActual)
-        ? [lugarActual].concat(LOCALIDADES_EVENTO)
-        : LOCALIDADES_EVENTO;
-
-    return '<option value="">Escoge el lugar</option>' + lugares.map(lugar => {
-        const seleccionado = lugar === lugarActual ? 'selected' : '';
-        return `<option value="${escaparHTML(lugar)}" ${seleccionado}>${escaparHTML(lugar)}</option>`;
-    }).join('');
-}
-
-function crearCampoFecha(valor = '') {
-    const contenedor = document.getElementById('camposFechasAgenda');
-    const fila = document.createElement('div');
-    const datos = separarFechaLugar(valor);
-    fila.className = 'fila-fecha-agenda';
-    fila.innerHTML = `
-        <input type="text" class="inputFechaAgenda" value="${escaparHTML(datos.fecha)}" placeholder="Ej: 20 Marzo 2026">
-        <select class="selectLugarAgenda">${crearOpcionesLugar(datos.lugar)}</select>
-        <button type="button" class="btn-quitar-fecha" onclick="quitarCampoFecha(this)">Quitar</button>
-    `;
-    contenedor.appendChild(fila);
-}
-
-function agregarCampoFecha() {
-    crearCampoFecha('');
-}
-
-function quitarCampoFecha(boton) {
-    const filas = document.querySelectorAll('.fila-fecha-agenda');
-    if (filas.length === 1) {
-        alert('Debe quedar al menos una fecha.');
-        return;
-    }
-
-    boton.closest('.fila-fecha-agenda').remove();
-}
 // --- LÓGICA DE AGENDA ---
 function abrirEditor(id) {
     artistaIdActual = id;
-    const tarjeta = document.getElementById(id);
-    const nombreArt = tarjeta.querySelector('h3').innerText;
+    const nombreArt = document.getElementById(id).querySelector('h3').innerText;
     document.getElementById('editTitle').innerText = "Cambiar fechas de: " + nombreArt;
 
-    const contenedor = document.getElementById('camposFechasAgenda');
-    contenedor.innerHTML = '';
-
-    const fechas = Array.from(tarjeta.querySelectorAll('.lista-agenda li'))
-        .map(item => item.innerText.replace('📅 ', '').trim())
-        .filter(Boolean);
-
-    if (fechas.length === 0) {
-        crearCampoFecha('');
-    } else {
-        fechas.forEach(fecha => crearCampoFecha(fecha));
-    }
-
+    const items = document.getElementById(id).querySelectorAll('.lista-agenda li');
+    document.getElementById('inputFecha1').value = items[0].innerText.replace('📅 ', '');
+    document.getElementById('inputFecha2').value = items[1].innerText.replace('📅 ', '');
+    document.getElementById('inputFecha3').value = items[2].innerText.replace('📅 ', '');
     document.getElementById('miModal').style.display = "block";
 }
 
@@ -427,43 +229,10 @@ function cerrarModal() {
 }
 
 function guardarAgenda() {
-    const tarjeta = document.getElementById(artistaIdActual);
-    const lista = tarjeta.querySelector('.lista-agenda');
-    const filas = Array.from(document.querySelectorAll('.fila-fecha-agenda'));
-    const camposIncompletos = filas.some(fila => {
-        const fecha = fila.querySelector('.inputFechaAgenda').value.trim();
-        const lugar = fila.querySelector('.selectLugarAgenda').value.trim();
-        return (fecha && !lugar) || (!fecha && lugar);
-    });
-
-    if (camposIncompletos) {
-        alert('Cada fecha debe tener un lugar seleccionado.');
-        return;
-    }
-
-    const nuevasFechas = filas
-        .map(fila => {
-            const fecha = fila.querySelector('.inputFechaAgenda').value.trim();
-            const lugar = fila.querySelector('.selectLugarAgenda').value.trim();
-            return fecha && lugar ? `${fecha} - ${lugar}` : '';
-        })
-        .filter(Boolean);
-
-    if (nuevasFechas.length === 0) {
-        alert('Agrega al menos una fecha con lugar.');
-        return;
-    }
-
-    lista.innerHTML = nuevasFechas.map(fecha => `<li>📅 ${fecha}</li>`).join('');
-
-    if (esEventoPublicado(artistaIdActual)) {
-        const eventos = obtenerEventosPublicados().map(evento => {
-            if (evento.id === artistaIdActual) evento.fechas = nuevasFechas;
-            return evento;
-        });
-        guardarEventosPublicados(eventos);
-    }
-
+    const lista = document.getElementById(artistaIdActual).querySelectorAll('.lista-agenda li');
+    lista[0].innerHTML = `📅 ${document.getElementById('inputFecha1').value}`;
+    lista[1].innerHTML = `📅 ${document.getElementById('inputFecha2').value}`;
+    lista[2].innerHTML = `📅 ${document.getElementById('inputFecha3').value}`;
     cerrarModal();
 }
 
@@ -571,9 +340,7 @@ function abrirRider(id) {
 function actualizarTablaRider() {
     const cuerpo = document.getElementById('cuerpoTablaRider');
     cuerpo.innerHTML = "";
-    const artistas = riderFiltroActual
-        ? obtenerTodosEventos().filter(evento => evento.id === riderFiltroActual)
-        : obtenerTodosEventos();
+    const artistas = obtenerTodosEventos();
 
     artistas.forEach(a => {
         const datosRaw = localStorage.getItem('rider_obj_' + a.id);

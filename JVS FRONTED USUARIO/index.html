@@ -14,12 +14,14 @@
 <!-- LOGIN -->
 <div id="login" class="modulo active">
 
+  <button class="back-admin-login" onclick="volverAdministrador()" title="Volver al administrador">←</button>
+
   <h1>Focus Producciones</h1>
 
   <div class="cuadro">
-    <input id="email" type="email" placeholder="Email">
+    <input id="email" type="email" placeholder="Usuario">
     <input id="password" type="password" placeholder="Contraseña">
-    <button onclick="login()">Iniciar sesión</button>
+    <button onclick="login()">Entrar</button>
     <div id="error"></div>
   </div>
 
@@ -74,9 +76,9 @@
 
   <h2>Eventos Disponibles</h2>
 
-  <div class="eventos">
+  <div class="eventos" id="listaEventosUsuario">
 
-    <div class="evento">
+    <div class="evento" data-event-id="art1">
       <img src="imagenes/feid.jpg.jpeg" alt="Feid">
       <h3>Feid</h3>
       <p>Fecha: 10/08/2026</p>
@@ -85,7 +87,7 @@
       <button onclick="mostrar('mapa')">Comprar Boletas</button>
     </div>
 
-    <div class="evento">
+    <div class="evento" data-event-id="art5">
       <img src="imagenes/karolg.jpeg.jpeg" alt="Karol G">
       <h3>Karol G</h3>
       <p>Fecha: 12/08/2026</p>
@@ -94,7 +96,7 @@
       <button onclick="mostrar('mapa')">Comprar Boletas</button>
     </div>
 
-    <div class="evento">
+    <div class="evento" data-event-id="art4">
       <img src="imagenes/doom.jpg.jpg" alt="Doom">
       <h3>Doom</h3>
       <p>Fecha: 15/08/2026</p>
@@ -103,7 +105,7 @@
       <button onclick="mostrar('mapa')">Comprar Boletas</button>
     </div>
 
-    <div class="evento">
+    <div class="evento" data-event-id="art2">
       <img src="imagenes/badbunny.jpg.jpeg" alt="Bad Bunny">
       <h3>Bad Bunny</h3>
       <p>Fecha: 20/08/2026</p>
@@ -112,7 +114,7 @@
       <button onclick="mostrar('mapa')">Comprar Boletas</button>
     </div>
 
-    <div class="evento">
+    <div class="evento" data-event-id="art6">
       <img src="imagenes/baswell.jpg.jpg" alt="Baswell">
       <h3>Baswell</h3>
       <p>Fecha: 25/08/2026</p>
@@ -121,7 +123,7 @@
       <button onclick="mostrar('mapa')">Comprar Boletas</button>
     </div>
 
-    <div class="evento">
+    <div class="evento" data-event-id="art3">
       <img src="imagenes/romeo.jpg.jpg" alt="Romeo Santos">
       <h3>Romeo Santos</h3>
       <p>Fecha: 30/08/2026</p>

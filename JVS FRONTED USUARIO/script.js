@@ -5,6 +5,12 @@
 function mostrar(id) {
   document.querySelectorAll(".modulo").forEach(m => m.classList.remove("active"));
   document.getElementById(id).classList.add("active");
+  if (id === "eventos") renderCarteleraPublicada();
+}
+
+function volverAdministrador() {
+  localStorage.setItem("admin_entrar_menu", "true");
+  window.location.href = "../JVS FRONTED ADMINISTRADOR/index.html";
 }
 
 /* ========================
@@ -74,6 +80,87 @@ function ciudades() {
 }
 
 ciudades(); // Cargar ciudades al iniciar
+
+/* ========================
+   CARTELERA PUBLICADA
+   ======================== */
+
+function escaparHTML(valor = "") {
+  return String(valor)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function limpiarFecha(fecha = "") {
+  return String(fecha).replace(/^\D*(?=\d)/, "").trim();
+}
+
+function obtenerJSON(clave) {
+  return JSON.parse(localStorage.getItem(clave)) || [];
+}
+
+function ocultarEventosBaseEliminados() {
+  let eliminados = obtenerJSON("eventos_base_eliminados");
+
+  document.querySelectorAll("[data-event-id]").forEach(tarjeta => {
+    tarjeta.style.display = eliminados.includes(tarjeta.dataset.eventId) ? "none" : "";
+  });
+}
+
+function obtenerCarteleraVigente() {
+  let cartelera = obtenerJSON("cartelera_usuario");
+  let eventosBooking = obtenerJSON("eventos_publicados");
+  let eliminadosBase = obtenerJSON("eventos_base_eliminados");
+  let idsBooking = eventosBooking.map(evento => evento.id);
+
+  let vigente = cartelera.filter(evento => {
+    if (eliminadosBase.includes(evento.id)) return false;
+    if (String(evento.id).startsWith("evento_") && !idsBooking.includes(evento.id)) return false;
+    return true;
+  });
+
+  if (vigente.length !== cartelera.length) {
+    localStorage.setItem("cartelera_usuario", JSON.stringify(vigente));
+  }
+
+  return vigente;
+}
+
+function renderCarteleraPublicada() {
+  let contenedor = document.getElementById("listaEventosUsuario");
+  if (!contenedor) return;
+
+  ocultarEventosBaseEliminados();
+  contenedor.querySelectorAll(".evento-publicado").forEach(evento => evento.remove());
+  let cartelera = obtenerCarteleraVigente();
+
+  cartelera.forEach(evento => {
+    let fechaPrincipal = evento.fechas && evento.fechas.length
+      ? limpiarFecha(evento.fechas[0])
+      : "Por confirmar";
+
+    contenedor.insertAdjacentHTML("beforeend", `
+      <div class="evento evento-publicado">
+        <img src="${escaparHTML(evento.img)}" alt="${escaparHTML(evento.nombre)}">
+        <h3>${escaparHTML(evento.nombre)}</h3>
+        <p>Fecha: ${escaparHTML(fechaPrincipal)}</p>
+        <p>Edad: +18</p>
+        <p>${escaparHTML(evento.tipo || "Evento")}</p>
+        <button onclick="mostrar('mapa')">Comprar Boletas</button>
+      </div>
+    `);
+  });
+}
+
+renderCarteleraPublicada();
+
+window.addEventListener("storage", function(event) {
+  if (["cartelera_usuario", "eventos_publicados", "eventos_base_eliminados"].includes(event.key)) {
+    renderCarteleraPublicada();
+  }
+});
 
 /* ========================
    ASIENTOS

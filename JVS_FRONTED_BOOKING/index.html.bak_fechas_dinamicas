@@ -145,14 +145,6 @@
             <h3>Publicar nuevo evento</h3>
             <div class="form-grid-evento">
                 <input type="text" id="nuevoEventoNombre" placeholder="Nombre del evento o artista">
-                <select id="nuevoEventoTipo">
-                    <option value="">Selecciona tipo de evento</option>
-                    <option>Concierto</option>
-                    <option>Festivales</option>
-                    <option>Fiesta en Bar</option>
-                    <option>Pool Party</option>
-                    <option>Show Privado</option>
-                </select>
                 <select id="nuevoEventoLugar">
                     <option value="">Selecciona una localidad</option>
                     <option>Movistar Arena</option>
@@ -206,8 +198,9 @@
 <div id="miModal" class="modal">
     <div class="modal-content">
         <h2 id="editTitle">Modificar Fechas</h2>
-        <div id="camposFechasAgenda" class="campos-fechas-agenda"></div>
-        <button class="btn" onclick="agregarCampoFecha()" style="background:#2196F3;">+ Agregar fecha</button>
+        <input type="text" id="inputFecha1"><br>
+        <input type="text" id="inputFecha2"><br>
+        <input type="text" id="inputFecha3"><br>
         <button class="btn" onclick="guardarAgenda()" style="background:#4CAF50;">Guardar</button>
         <button class="btn" onclick="cerrarModal()" style="background:#777;">Cerrar</button>
     </div>

@@ -25,27 +25,14 @@ const productos = [
     }
 ];
 
-let productoEditando = null;
-
-function mostrarMenuAdministrador() {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("bienvenida").innerText = "Hola Admin, bienvenido";
-}
-
-window.addEventListener("DOMContentLoaded", function() {
-    if (localStorage.getItem("admin_entrar_menu") === "true") {
-        localStorage.removeItem("admin_entrar_menu");
-        mostrarMenuAdministrador();
-    }
-});
-
 // ===== LOGIN =====
 function login() {
     const usuario   = document.getElementById("user").value;
     const contraseña = document.getElementById("pass").value;
 
     if (usuario === "admin" && contraseña === "1234") {
-        mostrarMenuAdministrador();
+        document.getElementById("login").style.display = "none";
+        document.getElementById("bienvenida").innerText = "Hola Admin, bienvenido";
     } else {
         alert("Datos incorrectos");
     }
@@ -59,11 +46,6 @@ function showOptions() {
 
 function changePhoto(src) {
     document.getElementById("mainPhoto").src = src;
-}
-
-// ===== NAVEGACION =====
-function abrirVistaUsuario() {
-    window.location.href = "../JVS FRONTED USUARIO/index.html";
 }
 
 // ===== MODAL COORDINADOR =====
@@ -200,55 +182,6 @@ function guardarCambios() {
     alert("Cambios guardados correctamente");
 }
 
-function verVentasMes() {
-    alert("Aun no hay ventas registradas este mes.");
-}
-
-
-// ===== RESERVAS DE EVENTOS =====
-function abrirReservas() {
-    document.getElementById("ventanaReservas").style.display = "flex";
-    renderReservasAdministrador();
-}
-
-function cerrarReservas() {
-    document.getElementById("ventanaReservas").style.display = "none";
-}
-
-function renderReservasAdministrador() {
-    const contenedor = document.getElementById("listaReservasEventos");
-    if (!contenedor) return;
-
-    const reservas = JSON.parse(localStorage.getItem("reservas_eventos")) || [];
-
-    if (reservas.length === 0) {
-        contenedor.innerHTML = "<p style='text-align:center;'>Todavia no hay reservas registradas.</p>";
-        return;
-    }
-
-    contenedor.innerHTML = reservas.map(reserva => {
-        const invitados = reserva.invitados && reserva.invitados.length
-            ? reserva.invitados.join(", ")
-            : "Sin invitados registrados";
-
-        return `
-            <div class="producto-item">
-                <div>
-                    <b>${reserva.artista}</b><br><br>
-                    Fecha reservada: ${reserva.fecha}<br>
-                    Invitados (${reserva.totalInvitados || 0}): ${invitados}<br>
-                    Actualizada: ${reserva.actualizada || "---"}
-                </div>
-            </div>
-        `;
-    }).join("");
-}
-
-window.addEventListener("storage", function(event) {
-    if (event.key === "reservas_eventos") {
-        renderReservasAdministrador();
-    }
-});
 // ===== OTRAS FUNCIONES =====
 function verInventario() {
     window.location.href = "raider.html";
@@ -268,11 +201,6 @@ function guardarProducto(){
     const stock = parseInt(document.getElementById("stockProducto").value);
 
     const archivo = document.getElementById("imagenProducto").files[0];
-
-    if (!nombre || Number.isNaN(precio) || Number.isNaN(stock)) {
-        alert("Completa nombre, precio y stock antes de guardar.");
-        return;
-    }
 
     let imagen = "imagen/default.png";
 
@@ -319,5 +247,5 @@ function guardarProducto(){
 }
 
 function verProveedores() {
-    window.location.href = "../JVS FRONTED PROVEEDORES/proveedores.html";
+    alert("Aquí se mostrarán los proveedores");
 }

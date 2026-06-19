@@ -3,7 +3,7 @@ body {
     margin: 0;
     font-family: Arial, sans-serif;
     background: url("imagen/FONDO.avif") no-repeat center center / cover;
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -16,7 +16,7 @@ body {
     background: rgba(0, 0, 0, 0.85);
     border: 6px solid #7a0018;
     box-shadow: 0 0 40px #7a0018;
-    border-radius: 8px;
+    border-radius: 20px;
     padding: 30px;
 }
 
@@ -180,7 +180,7 @@ input:focus {
     border: 5px solid #7a0018;
     box-shadow: 0 0 40px #7a0018;
     padding: 30px;
-    border-radius: 8px;
+    border-radius: 20px;
     text-align: center;
     color: white;
     width: 320px;
@@ -204,7 +204,7 @@ input:focus {
     border: 5px solid #7a0018;
     box-shadow: 0 0 40px #7a0018;
     padding: 30px;
-    border-radius: 8px;
+    border-radius: 20px;
     text-align: center;
     color: white;
     width: 350px;
@@ -229,20 +229,10 @@ input:focus {
     width: 100%;
 }
 
-#ventanaCoord a {
-    display: block;
-    margin: 18px 0 12px;
-}
-
-#ventanaCoord a button,
-#ventanaCoord .modal-box > button:not(.cerrar-btn) {
-    width: 100%;
-}
-
 /* ===== MODAL INVENTARIO ===== */
 #inventarioVend .modal-box {
-    width: min(750px, 92vw);
-    max-height: 85vh;
+    width: 380px;
+    max-height: 80%;
     overflow-y: auto;
     text-align: left;
 }

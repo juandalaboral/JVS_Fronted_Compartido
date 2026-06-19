@@ -24,12 +24,20 @@ function guardarDatos() {
   localStorage.setItem("proveedores_data", JSON.stringify(data));
 }
 
+function obtenerLugarDesdeFechas(fechas = []) {
+  if (!Array.isArray(fechas) || !fechas.length) return "";
+  const partes = String(fechas[0]).split(" - ");
+  return partes.length > 1 ? partes.slice(1).join(" - ").trim() : "";
+}
+
 function obtenerEventosBooking() {
   return (JSON.parse(localStorage.getItem("eventos_publicados")) || []).map(evento => ({
     id: evento.id,
     nombre: evento.nombre,
     img: evento.imagen,
     tipo: evento.tipo || "",
+    lugar: evento.lugar || obtenerLugarDesdeFechas(evento.fechas),
+    hora: evento.hora || "",
     fechas: evento.fechas || []
   }));
 }
@@ -133,6 +141,8 @@ function mandarACartelera(eventId) {
     nombre: evento.nombre,
     img: evento.img,
     tipo: evento.tipo || "Evento",
+    lugar: evento.lugar || obtenerLugarDesdeFechas(evento.fechas),
+    hora: evento.hora || "",
     fechas: evento.fechas || [],
     empresas: data[eventId].empresas,
     personal: data[eventId].personal

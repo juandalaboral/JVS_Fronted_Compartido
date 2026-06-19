@@ -182,6 +182,66 @@ function actualizarSelectRider() {
     }
 }
 
+function formatearHoraEvento(valor = '') {
+    if (!valor) return '';
+    const partes = valor.split(':');
+    if (partes.length < 2) return valor;
+
+    let horas = parseInt(partes[0], 10);
+    const minutos = partes[1];
+    const periodo = horas >= 12 ? 'PM' : 'AM';
+    horas = horas % 12 || 12;
+    return `${horas}:${minutos} ${periodo}`;
+}
+
+function convertirHoraAInput(valor = '') {
+    if (!valor) return '';
+    const texto = String(valor).trim();
+    if (/^\d{2}:\d{2}$/.test(texto)) return texto;
+
+    const match = texto.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!match) return '';
+
+    let horas = parseInt(match[1], 10);
+    const minutos = match[2];
+    const periodo = match[3].toUpperCase();
+
+    if (periodo === 'PM' && horas < 12) horas += 12;
+    if (periodo === 'AM' && horas === 12) horas = 0;
+
+    return `${String(horas).padStart(2, '0')}:${minutos}`;
+}
+
+function obtenerEventoPublicadoPorId(id) {
+    return obtenerEventosPublicados().find(evento => evento.id === id) || null;
+}
+
+function sincronizarEventoBaseVistaUsuario(id, cambios) {
+    const eventoBase = EVENTOS_BASE.find(evento => evento.id === id);
+    if (!eventoBase) return;
+
+    const agendasBase = JSON.parse(localStorage.getItem('eventos_base_agenda')) || [];
+    const indice = agendasBase.findIndex(evento => evento.id === id);
+    const registro = Object.assign({ id: id, nombre: eventoBase.n }, cambios);
+
+    if (indice >= 0) agendasBase[indice] = Object.assign({}, agendasBase[indice], registro);
+    else agendasBase.push(registro);
+
+    localStorage.setItem('eventos_base_agenda', JSON.stringify(agendasBase));
+}
+function sincronizarEventoVistaUsuario(id, cambios) {
+    const cartelera = JSON.parse(localStorage.getItem('cartelera_usuario')) || [];
+    let actualizado = false;
+    const nuevaCartelera = cartelera.map(evento => {
+        if (evento.id !== id) return evento;
+        actualizado = true;
+        return Object.assign({}, evento, cambios);
+    });
+
+    if (actualizado) {
+        localStorage.setItem('cartelera_usuario', JSON.stringify(nuevaCartelera));
+    }
+}
 function formatearFechaEvento(valor) {
     if (!valor) return '';
 
@@ -197,6 +257,7 @@ function limpiarFormularioEvento() {
     document.getElementById('nuevoEventoNombre').value = '';
     document.getElementById('nuevoEventoTipo').value = '';
     document.getElementById('nuevoEventoLugar').value = '';
+    document.getElementById('nuevoEventoHora').value = '';
     document.getElementById('nuevoEventoFecha1').value = '';
     document.getElementById('nuevoEventoFecha2').value = '';
     document.getElementById('nuevoEventoFecha3').value = '';
@@ -207,6 +268,7 @@ function publicarEventoNuevo() {
     const nombre = document.getElementById('nuevoEventoNombre').value.trim();
     const tipo = document.getElementById('nuevoEventoTipo').value;
     const lugar = document.getElementById('nuevoEventoLugar').value;
+    const hora = document.getElementById('nuevoEventoHora').value;
     const fechas = [
         document.getElementById('nuevoEventoFecha1').value,
         document.getElementById('nuevoEventoFecha2').value,
@@ -214,8 +276,8 @@ function publicarEventoNuevo() {
     ].filter(Boolean).map(fecha => `${formatearFechaEvento(fecha)} - ${lugar}`);
     const archivo = document.getElementById('nuevoEventoFoto').files[0];
 
-    if (!nombre || !tipo || !lugar || fechas.length === 0 || !archivo) {
-        alert('Completa nombre, tipo de evento, localidad, al menos una fecha y una foto del evento.');
+    if (!nombre || !tipo || !lugar || !hora || fechas.length === 0 || !archivo) {
+        alert('Completa nombre, tipo de evento, localidad, hora, al menos una fecha y una foto del evento.');
         return;
     }
 
@@ -227,6 +289,8 @@ function publicarEventoNuevo() {
             nombre: nombre,
             tipo: tipo,
             lugar: lugar,
+            hora: formatearHoraEvento(hora),
+            horas: fechas.map(() => formatearHoraEvento(hora)),
             fechas: fechas,
             imagen: e.target.result
         };
@@ -373,14 +437,24 @@ function crearOpcionesLugar(lugarActual = '') {
     }).join('');
 }
 
-function crearCampoFecha(valor = '') {
+function crearCampoFecha(valor = '', hora = '') {
     const contenedor = document.getElementById('camposFechasAgenda');
     const fila = document.createElement('div');
     const datos = separarFechaLugar(valor);
     fila.className = 'fila-fecha-agenda';
     fila.innerHTML = `
-        <input type="text" class="inputFechaAgenda" value="${escaparHTML(datos.fecha)}" placeholder="Ej: 20 Marzo 2026">
-        <select class="selectLugarAgenda">${crearOpcionesLugar(datos.lugar)}</select>
+        <label class="campo-agenda-fecha">
+            <span>Fecha</span>
+            <input type="text" class="inputFechaAgenda" value="${escaparHTML(datos.fecha)}" placeholder="Ej: 20 Marzo 2026">
+        </label>
+        <label class="campo-agenda-fecha">
+            <span>Ciudad</span>
+            <select class="selectLugarAgenda">${crearOpcionesLugar(datos.lugar)}</select>
+        </label>
+        <label class="campo-agenda-fecha">
+            <span>Hora</span>
+            <input type="time" class="inputHoraAgenda" value="${escaparHTML(convertirHoraAInput(hora))}">
+        </label>
         <button type="button" class="btn-quitar-fecha" onclick="quitarCampoFecha(this)">Quitar</button>
     `;
     contenedor.appendChild(fila);
@@ -404,19 +478,25 @@ function abrirEditor(id) {
     artistaIdActual = id;
     const tarjeta = document.getElementById(id);
     const nombreArt = tarjeta.querySelector('h3').innerText;
+    const eventoPublicado = obtenerEventoPublicadoPorId(id);
     document.getElementById('editTitle').innerText = "Cambiar fechas de: " + nombreArt;
 
     const contenedor = document.getElementById('camposFechasAgenda');
     contenedor.innerHTML = '';
 
-    const fechas = Array.from(tarjeta.querySelectorAll('.lista-agenda li'))
-        .map(item => item.innerText.replace('📅 ', '').trim())
+    const fechasDesdeTarjeta = Array.from(tarjeta.querySelectorAll('.lista-agenda li'))
+        .map(item => item.innerText.replace(/^[^A-Za-z0-9]+/, '').trim())
         .filter(Boolean);
+    const fechas = eventoPublicado && Array.isArray(eventoPublicado.fechas) && eventoPublicado.fechas.length
+        ? eventoPublicado.fechas
+        : fechasDesdeTarjeta;
+    const horas = eventoPublicado && Array.isArray(eventoPublicado.horas) ? eventoPublicado.horas : [];
+    const horaBase = eventoPublicado ? eventoPublicado.hora || '' : '';
 
     if (fechas.length === 0) {
-        crearCampoFecha('');
+        crearCampoFecha('', horaBase);
     } else {
-        fechas.forEach(fecha => crearCampoFecha(fecha));
+        fechas.forEach((fecha, index) => crearCampoFecha(fecha, horas[index] || horaBase));
     }
 
     document.getElementById('miModal').style.display = "block";
@@ -430,43 +510,61 @@ function guardarAgenda() {
     const tarjeta = document.getElementById(artistaIdActual);
     const lista = tarjeta.querySelector('.lista-agenda');
     const filas = Array.from(document.querySelectorAll('.fila-fecha-agenda'));
-    const camposIncompletos = filas.some(fila => {
-        const fecha = fila.querySelector('.inputFechaAgenda').value.trim();
-        const lugar = fila.querySelector('.selectLugarAgenda').value.trim();
-        return (fecha && !lugar) || (!fecha && lugar);
+    const entradas = filas.map(fila => ({
+        fecha: fila.querySelector('.inputFechaAgenda').value.trim(),
+        lugar: fila.querySelector('.selectLugarAgenda').value.trim(),
+        hora: fila.querySelector('.inputHoraAgenda').value.trim()
+    }));
+
+    const camposIncompletos = entradas.some(entrada => {
+        const tieneAlgo = entrada.fecha || entrada.lugar || entrada.hora;
+        return tieneAlgo && (!entrada.fecha || !entrada.lugar || !entrada.hora);
     });
 
     if (camposIncompletos) {
-        alert('Cada fecha debe tener un lugar seleccionado.');
+        alert('Cada registro debe tener fecha, ciudad y hora.');
         return;
     }
 
-    const nuevasFechas = filas
-        .map(fila => {
-            const fecha = fila.querySelector('.inputFechaAgenda').value.trim();
-            const lugar = fila.querySelector('.selectLugarAgenda').value.trim();
-            return fecha && lugar ? `${fecha} - ${lugar}` : '';
-        })
-        .filter(Boolean);
+    const entradasValidas = entradas.filter(entrada => entrada.fecha && entrada.lugar && entrada.hora);
 
-    if (nuevasFechas.length === 0) {
-        alert('Agrega al menos una fecha con lugar.');
+    if (entradasValidas.length === 0) {
+        alert('Agrega al menos una fecha con ciudad y hora.');
         return;
     }
 
-    lista.innerHTML = nuevasFechas.map(fecha => `<li>📅 ${fecha}</li>`).join('');
+    const nuevasFechas = entradasValidas.map(entrada => `${entrada.fecha} - ${entrada.lugar}`);
+    const nuevasHoras = entradasValidas.map(entrada => formatearHoraEvento(entrada.hora));
+    const primeraUbicacion = entradasValidas[0].lugar;
+    const primeraHora = nuevasHoras[0];
+
+    lista.innerHTML = nuevasFechas.map(fecha => `<li>&#128197; ${fecha}</li>`).join('');
+
+    const cambiosAgenda = {
+        fechas: nuevasFechas,
+        horas: nuevasHoras,
+        lugar: primeraUbicacion,
+        hora: primeraHora
+    };
 
     if (esEventoPublicado(artistaIdActual)) {
         const eventos = obtenerEventosPublicados().map(evento => {
-            if (evento.id === artistaIdActual) evento.fechas = nuevasFechas;
+            if (evento.id === artistaIdActual) {
+                evento.fechas = nuevasFechas;
+                evento.horas = nuevasHoras;
+                evento.lugar = primeraUbicacion;
+                evento.hora = primeraHora;
+            }
             return evento;
         });
         guardarEventosPublicados(eventos);
+        sincronizarEventoVistaUsuario(artistaIdActual, cambiosAgenda);
+    } else {
+        sincronizarEventoBaseVistaUsuario(artistaIdActual, cambiosAgenda);
     }
 
     cerrarModal();
 }
-
 // --- LÓGICA DE INVITADOS ---
 function abrirInvitados(id) {
     artistaIdActual = id;

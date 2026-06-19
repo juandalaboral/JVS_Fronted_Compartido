@@ -7,7 +7,7 @@ const EVENTOS_BASE = [
     { id: 'art3', n: 'Romeo Santos' },
     { id: 'art4', n: 'Evento Techno' },
     { id: 'art5', n: 'Karol G' },
-    { id: 'art6', n: 'Evento Rave' }
+    { id: 'art6', n: 'Evento Rave' } 
 ];
 
 function obtenerEventosPublicados() {

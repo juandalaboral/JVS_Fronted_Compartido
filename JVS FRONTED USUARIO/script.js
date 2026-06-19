@@ -97,6 +97,216 @@ function limpiarFecha(fecha = "") {
   return String(fecha).replace(/^\D*(?=\d)/, "").trim();
 }
 
+
+const detallesEventos = {
+  "BAD BUNNY": {
+    genero: "Reggaeton",
+    lugar: "Bogot\u00e1",
+    agenda: ["28 Marzo 2026 - Bogot\u00e1", "30 Abril 2026 - Medell\u00edn", "10 Agosto 2026 - Valledupar"],
+    descripcionGeneral: "Bad Bunny es uno de los artistas mas influyentes de la musica urbana a nivel mundial; su estilo innovador y su impacto internacional lo han convertido en una referencia del genero. En esta presentacion los asistentes podran disfrutar de una noche llena de energia, produccion de primer nivel y sus mayores exitos en un espectaculo disenado para brindar una experiencia inolvidable."
+  },
+  "KAROL G": {
+    genero: "Reggaeton / Urbano Latino",
+    lugar: "Bogot\u00e1",
+    agenda: ["01 Abril 2026 - Bogot\u00e1", "15 Septiembre 2026 - Huila", "27 Octubre 2026 - Medell\u00edn"],
+    descripcionGeneral: "Karol G es una de las artistas latinas mas influyentes de la actualidad y una de las principales representantes de la musica urbana. En esta presentacion los asistentes podran disfrutar de una noche llena de energia, produccion de alto nivel y los temas mas importantes de su carrera en un espectaculo disenado para brindar una experiencia inolvidable."
+  },
+  "FEID": {
+    genero: "Reggaeton",
+    lugar: "Bogot\u00e1",
+    agenda: ["20 Marzo 2026 - Bogot\u00e1", "25 Marzo 2026 - Medell\u00edn", "30 Marzo 2026 - Cali"],
+    descripcionGeneral: "Feid se ha consolidado como uno de los maximos exponentes del reggaeton colombiano gracias a su estilo unico y su conexion con el publico. Esta presentacion reune sus exitos mas reconocidos en una experiencia pensada para miles de fanaticos, con energia, produccion profesional y una atmosfera cercana al universo del Ferxxo."
+  },
+  "ROMEO SANTOS": {
+    genero: "Bachata",
+    lugar: "Bogot\u00e1",
+    agenda: ["25 Marzo 2026 - Bogot\u00e1", "15 Septiembre 2026 - Cali", "02 Octubre 2026 - Puerto Rico"],
+    descripcionGeneral: "Romeo Santos es considerado uno de los maximos exponentes de la bachata a nivel mundial y una de las figuras mas importantes de la musica latina. Su show propone una noche llena de emociones, romanticismo y grandes exitos en un espectaculo creado para vivir una experiencia inolvidable."
+  },
+  "BASWELL": {
+    genero: "Techno",
+    lugar: "Bogot\u00e1",
+    agenda: ["13 Abril 2026 - Bogot\u00e1", "31 Junio 2026 - Huila", "14 Octubre 2026 - Medell\u00edn"],
+    descripcionGeneral: "Baswell es reconocido por sus presentaciones llenas de energia y su estilo caracteristico dentro de la escena techno internacional. Este evento rave ofrece una experiencia inmersiva de musica electronica con efectos visuales, sonido profesional y una atmosfera disenada para los amantes del techno."
+  },
+  "DOOM": {
+    genero: "Hard Techno",
+    lugar: "Bogot\u00e1",
+    agenda: ["04 Abril 2026 - Bogot\u00e1", "14 Septiembre 2026 - Cali", "22 Octubre 2026 - Medell\u00edn"],
+    descripcionGeneral: "Doom es un referente de la escena hard techno, reconocido por sus sesiones intensas y una puesta en escena de gran impacto. Esta noche esta dedicada a los sonidos mas potentes de la musica electronica, acompanados de una experiencia audiovisual compacta, oscura y contundente."
+  }
+};
+
+let eventoActivoModal = null;
+let fechaSeleccionadaModal = "";
+let compraActual = null;
+
+function normalizarNombreEvento(nombre = "") {
+  const limpio = String(nombre).trim().toUpperCase();
+  if (limpio.includes("BAD BUNNY")) return "BAD BUNNY";
+  if (limpio.includes("KAROL")) return "KAROL G";
+  if (limpio.includes("FEID")) return "FEID";
+  if (limpio.includes("ROMEO")) return "ROMEO SANTOS";
+  if (limpio.includes("BASWELL") || limpio.includes("BASSWELL")) return "BASWELL";
+  if (limpio.includes("DOOM")) return "DOOM";
+  return limpio;
+}
+
+function separarFechaLugar(fecha = "") {
+  const partes = String(fecha).split(" - ");
+  const fechaTexto = limpiarFecha(partes[0] || fecha) || "Fecha no registrada";
+  const lugar = partes.length > 1 ? partes.slice(1).join(" - ").trim() : "";
+  return { fecha: fechaTexto, lugar };
+}
+
+function formatearFechaOpcion(fecha = "") {
+  const datos = separarFechaLugar(fecha);
+  return datos.lugar ? `${datos.lugar} \u2014 ${datos.fecha}` : datos.fecha;
+}
+
+function obtenerDetalleEvento(evento) {
+  const clave = normalizarNombreEvento(evento.nombre || evento.clave || "");
+  const detalle = detallesEventos[clave] || {};
+  const agendasBase = obtenerJSON("eventos_base_agenda");
+  const agendaBase = agendasBase.find(item => item.id === evento.id || normalizarNombreEvento(item.nombre || "") === clave) || {};
+  const fechasDisponibles = Array.isArray(agendaBase.fechas) && agendaBase.fechas.length ? agendaBase.fechas : (detalle.agenda || (Array.isArray(evento.fechas) && evento.fechas.length ? evento.fechas : []));
+  const fechaBase = fechasDisponibles[0] || evento.fecha || "";
+  const fechaInfo = separarFechaLugar(fechaBase);
+
+  return {
+    clave,
+    id: evento.id || clave,
+    nombre: evento.nombre || "Evento",
+    img: evento.img || evento.imagen || "",
+    genero: detalle.genero || evento.tipo || "Evento musical",
+    fecha: fechaInfo.fecha,
+    hora: agendaBase.hora || evento.hora || "Hora no registrada",
+    lugar: agendaBase.lugar || evento.lugar || fechaInfo.lugar || detalle.lugar || "Ubicacion no registrada",
+    fechasDisponibles,
+    descripcionGeneral: detalle.descripcionGeneral || "Este evento publicado en la cartelera de Focus Producciones combina una propuesta artistica destacada con produccion profesional, proveedores asignados y una experiencia preparada para el publico."
+  };
+}
+
+function renderOpcionesFechaCompra(fechas = []) {
+  const contenedor = document.getElementById("opcionesFechaCompra");
+  if (!contenedor) return;
+
+  const lista = fechas.length ? fechas : ["Fecha no registrada"];
+  contenedor.innerHTML = lista.map(fecha => `
+    <label class="event-date-option">
+      <input type="radio" name="fechaCompraEvento" value="${escaparHTML(fecha)}">
+      <span>${escaparHTML(formatearFechaOpcion(fecha))}</span>
+    </label>
+  `).join("");
+
+  fechaSeleccionadaModal = "";
+  contenedor.querySelectorAll('input[name="fechaCompraEvento"]').forEach(input => {
+    input.addEventListener("change", function() {
+      fechaSeleccionadaModal = this.value;
+    });
+  });
+}
+
+function abrirModalEvento(evento) {
+  const detalle = obtenerDetalleEvento(evento);
+  const modal = document.getElementById("modalEvento");
+
+  document.getElementById("modalEventoImagen").src = detalle.img;
+  document.getElementById("modalEventoImagen").alt = detalle.nombre;
+  document.getElementById("modalEventoGenero").innerText = detalle.genero;
+  document.getElementById("modalEventoNombre").innerText = detalle.nombre;
+  document.getElementById("modalEventoHora").innerText = detalle.hora;
+  document.getElementById("modalEventoLugar").innerText = detalle.lugar;
+  eventoActivoModal = detalle;
+  document.getElementById("modalEventoDescripcionGeneral").innerText = detalle.descripcionGeneral;
+
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+}
+
+function cerrarModalEvento() {
+  const modal = document.getElementById("modalEvento");
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+  cerrarModalSeleccionFecha();
+  eventoActivoModal = null;
+  fechaSeleccionadaModal = "";
+}
+
+function abrirModalSeleccionFecha() {
+  if (!eventoActivoModal) return;
+  const modal = document.getElementById("modalSeleccionFecha");
+  if (!modal) return;
+
+  renderOpcionesFechaCompra(eventoActivoModal.fechasDisponibles || []);
+  modal.classList.add("is-open");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+}
+
+function cerrarModalSeleccionFecha() {
+  const modal = document.getElementById("modalSeleccionFecha");
+  if (!modal) return;
+
+  modal.classList.remove("is-open");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function comprarDesdeModal() {
+  abrirModalSeleccionFecha();
+}
+
+function continuarCompraConFecha() {
+  if (!fechaSeleccionadaModal) {
+    alert("Debes seleccionar una fecha para continuar.");
+    return;
+  }
+
+  const datosFecha = separarFechaLugar(fechaSeleccionadaModal);
+  compraActual = {
+    evento: eventoActivoModal ? eventoActivoModal.nombre : "Evento",
+    fecha: fechaSeleccionadaModal,
+    fechaTexto: datosFecha.fecha,
+    lugar: datosFecha.lugar || (eventoActivoModal ? eventoActivoModal.lugar : "")
+  };
+  localStorage.setItem("compra_evento_seleccionado", JSON.stringify(compraActual));
+
+  cerrarModalSeleccionFecha();
+  const modalEvento = document.getElementById("modalEvento");
+  modalEvento.classList.remove("is-open");
+  modalEvento.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+  eventoActivoModal = null;
+  fechaSeleccionadaModal = "";
+  mostrar("mapa");
+}
+function verEventoBase(clave) {
+  const tarjeta = document.querySelector(`[data-event-key="${clave}"]`);
+  if (!tarjeta) return;
+
+  abrirModalEvento({
+    clave,
+    id: tarjeta.dataset.eventId || clave,
+    nombre: tarjeta.querySelector("h3")?.innerText || clave,
+    img: tarjeta.querySelector("img")?.getAttribute("src") || ""
+  });
+}
+
+function verEventoPublicado(id) {
+  const evento = obtenerCarteleraVigente().find(item => item.id === id);
+  if (evento) abrirModalEvento(evento);
+}
+
+window.addEventListener("keydown", function(event) {
+  if (event.key === "Escape") {
+    const modalFecha = document.getElementById("modalSeleccionFecha");
+    if (modalFecha && modalFecha.classList.contains("is-open")) cerrarModalSeleccionFecha();
+    else cerrarModalEvento();
+  }
+});
+
 function obtenerJSON(clave) {
   return JSON.parse(localStorage.getItem(clave)) || [];
 }
@@ -112,13 +322,11 @@ function ocultarEventosBaseEliminados() {
 function obtenerCarteleraVigente() {
   let cartelera = obtenerJSON("cartelera_usuario");
   let eventosBooking = obtenerJSON("eventos_publicados");
-  let eliminadosBase = obtenerJSON("eventos_base_eliminados");
   let idsBooking = eventosBooking.map(evento => evento.id);
 
   let vigente = cartelera.filter(evento => {
-    if (eliminadosBase.includes(evento.id)) return false;
-    if (String(evento.id).startsWith("evento_") && !idsBooking.includes(evento.id)) return false;
-    return true;
+    if (!String(evento.id).startsWith("evento_")) return false;
+    return idsBooking.includes(evento.id);
   });
 
   if (vigente.length !== cartelera.length) {
@@ -137,18 +345,14 @@ function renderCarteleraPublicada() {
   let cartelera = obtenerCarteleraVigente();
 
   cartelera.forEach(evento => {
-    let fechaPrincipal = evento.fechas && evento.fechas.length
-      ? limpiarFecha(evento.fechas[0])
-      : "Por confirmar";
 
     contenedor.insertAdjacentHTML("beforeend", `
       <div class="evento evento-publicado">
         <img src="${escaparHTML(evento.img)}" alt="${escaparHTML(evento.nombre)}">
         <h3>${escaparHTML(evento.nombre)}</h3>
-        <p>Fecha: ${escaparHTML(fechaPrincipal)}</p>
-        <p>Edad: +18</p>
-        <p>${escaparHTML(evento.tipo || "Evento")}</p>
-        <button onclick="mostrar('mapa')">Comprar Boletas</button>
+        <div class="event-card-actions">
+          <button onclick="verEventoPublicado('${escaparHTML(evento.id)}')">Ver Evento</button>
+        </div>
       </div>
     `);
   });
@@ -157,7 +361,7 @@ function renderCarteleraPublicada() {
 renderCarteleraPublicada();
 
 window.addEventListener("storage", function(event) {
-  if (["cartelera_usuario", "eventos_publicados", "eventos_base_eliminados"].includes(event.key)) {
+  if (["cartelera_usuario", "eventos_publicados", "eventos_base_eliminados", "eventos_base_agenda"].includes(event.key)) {
     renderCarteleraPublicada();
   }
 });
@@ -167,6 +371,10 @@ window.addEventListener("storage", function(event) {
    ======================== */
 
 let seleccionados = [];
+let ultimaCompra = "";
+let facturaActual = null;
+const PRECIO_UNITARIO_BOLETA = 85000;
+const IVA_FACTURA = 0.19;
 
 function crearAsientos(zona) {
   let letras = ["A", "B", "C", "D"];
@@ -201,22 +409,360 @@ crearAsientos("vip");
    PAGO
    ======================== */
 
-function pagar() {
+function formatearMoneda(valor) {
+  return "$" + Number(valor || 0).toLocaleString("es-CO");
+}
+
+function obtenerCompraSeleccionada() {
+  const compraGuardada = compraActual || obtenerJSON("compra_evento_seleccionado");
+  return Array.isArray(compraGuardada) ? {} : compraGuardada;
+}
+
+function calcularValoresCompra() {
+  const cantidad = seleccionados.length;
+  const subtotal = PRECIO_UNITARIO_BOLETA * cantidad;
+  const iva = Math.round(subtotal * IVA_FACTURA);
+  const total = subtotal + iva;
+
+  return {
+    precioUnitario: PRECIO_UNITARIO_BOLETA,
+    cantidad,
+    subtotal,
+    iva,
+    total
+  };
+}
+
+function renderPasarelaPSE() {
+  const compra = obtenerCompraSeleccionada();
+  const valores = calcularValoresCompra();
+  const fechaCompra = compra.fecha || "Fecha no seleccionada";
+  const lugarCompra = compra.lugar || separarFechaLugar(fechaCompra).lugar || "Lugar no registrado";
+
+  document.getElementById("pseResumenCompra").innerHTML = `
+    <p><strong>Evento</strong><span>${escaparHTML(compra.evento || "Evento")}</span></p>
+    <p><strong>Fecha seleccionada</strong><span>${escaparHTML(fechaCompra)}</span></p>
+    <p><strong>Lugar</strong><span>${escaparHTML(lugarCompra)}</span></p>
+    <p><strong>Asientos seleccionados</strong><span>${escaparHTML(seleccionados.join(", "))}</span></p>
+    <p><strong>Cantidad de boletas</strong><span>${valores.cantidad}</span></p>
+  `;
+
+  document.getElementById("pseResumenValores").innerHTML = `
+    <p><span>Precio unitario</span><strong>${formatearMoneda(valores.precioUnitario)}</strong></p>
+    <p><span>Cantidad</span><strong>${valores.cantidad}</strong></p>
+    <p><span>Subtotal</span><strong>${formatearMoneda(valores.subtotal)}</strong></p>
+    <p><span>IVA 19%</span><strong>${formatearMoneda(valores.iva)}</strong></p>
+    <p class="pse-total"><span>Total a pagar</span><strong>${formatearMoneda(valores.total)}</strong></p>
+  `;
+}
+
+function abrirPasarelaPSE() {
   if (seleccionados.length === 0) {
     alert("Seleccione asientos");
     return;
   }
 
-  alert("Redirigiendo a PSE...");
+  const compra = obtenerCompraSeleccionada();
+  if (!compra.fecha) {
+    alert("Debes seleccionar una fecha antes de pagar.");
+    mostrar("eventos");
+    return;
+  }
 
-  setTimeout(() => {
-    alert("Compra realizada con éxito");
+  renderPasarelaPSE();
+  mostrar("pse");
+}
 
-    document.getElementById("lista").innerHTML = "Asientos: " + seleccionados.join(", ");
+function obtenerDatosCompradorPSE() {
+  return {
+    nombre: document.getElementById("pseNombre").value.trim(),
+    documento: document.getElementById("pseDocumento").value.trim(),
+    correo: document.getElementById("pseCorreo").value.trim(),
+    telefono: document.getElementById("pseTelefono").value.trim()
+  };
+}
 
-    document.getElementById("qr").src =
-      "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + seleccionados.join(",");
+function validarDatosCompradorPSE(datos) {
+  const correoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.correo);
+  if (!datos.nombre || !datos.documento || !datos.correo || !datos.telefono) {
+    alert("Completa todos los datos del comprador.");
+    return false;
+  }
 
-    mostrar("resultado");
-  }, 1500);
+  if (!correoValido) {
+    alert("Ingresa un correo electronico valido.");
+    return false;
+  }
+
+  return true;
+}
+
+function construirFacturaLocal(datosComprador) {
+  const compra = obtenerCompraSeleccionada();
+  const valores = calcularValoresCompra();
+  const fechaCompra = compra.fecha || "Fecha no seleccionada";
+  const lugarCompra = compra.lugar || separarFechaLugar(fechaCompra).lugar || "Lugar no registrado";
+
+  return {
+    numero: "FAC-" + Date.now(),
+    fechaEmision: new Date().toLocaleString("es-CO"),
+    estadoPago: "Pagado",
+    metodoPago: "PSE",
+    comprador: datosComprador,
+    evento: compra.evento || "Evento",
+    fechaEvento: fechaCompra,
+    lugar: lugarCompra,
+    asientos: seleccionados.slice(),
+    cantidad: valores.cantidad,
+    precioUnitario: valores.precioUnitario,
+    subtotal: valores.subtotal,
+    iva: valores.iva,
+    total: valores.total
+  };
+}
+
+function construirTextoQRFactura(factura) {
+  return [
+    "FOCUS PRODUCCIONES",
+    "Factura: " + factura.numero,
+    "Estado: " + factura.estadoPago,
+    "Metodo de pago: " + factura.metodoPago,
+    "Comprador: " + factura.comprador.nombre,
+    "Documento: " + factura.comprador.documento,
+    "Correo: " + factura.comprador.correo,
+    "Telefono: " + factura.comprador.telefono,
+    "Evento: " + factura.evento,
+    "Fecha: " + factura.fechaEvento,
+    "Lugar: " + factura.lugar,
+    "Asientos: " + factura.asientos.join(", "),
+    "Cantidad: " + factura.cantidad,
+    "Subtotal: " + formatearMoneda(factura.subtotal),
+    "IVA: " + formatearMoneda(factura.iva),
+    "Total: " + formatearMoneda(factura.total)
+  ].join("\n");
+}
+function confirmarPagoPSE() {
+  const datosComprador = obtenerDatosCompradorPSE();
+  if (!validarDatosCompradorPSE(datosComprador)) return;
+
+  facturaActual = construirFacturaLocal(datosComprador);
+  localStorage.setItem("factura_actual", JSON.stringify(facturaActual));
+
+  const compras = obtenerJSON("compras_locales");
+  compras.push(facturaActual);
+  localStorage.setItem("compras_locales", JSON.stringify(compras));
+
+  alert("Compra realizada con exito");
+
+  ultimaCompra = construirTextoQRFactura(facturaActual);
+  const qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(ultimaCompra);
+
+  const resumenCompra = `
+    <article class="receipt-preview">
+      <header class="receipt-hero">
+        <div>
+          <span class="receipt-system">HORIZON JVS</span>
+          <h3>FACTURA ELECTR&Oacute;NICA</h3>
+        </div>
+        <span class="receipt-approved">COMPRA APROBADA &#9989;</span>
+      </header>
+
+      <section class="receipt-meta">
+        <p><strong>N&uacute;mero de factura</strong><span>${escaparHTML(facturaActual.numero)}</span></p>
+        <p><strong>Fecha de emisi&oacute;n</strong><span>${escaparHTML(facturaActual.fechaEmision)}</span></p>
+      </section>
+
+      <section class="receipt-card receipt-buyer">
+        <span class="receipt-card-label">Comprador</span>
+        <p><strong>Nombre</strong><span>${escaparHTML(facturaActual.comprador.nombre)}</span></p>
+        <p><strong>Documento</strong><span>${escaparHTML(facturaActual.comprador.documento)}</span></p>
+        <p><strong>Correo electr&oacute;nico</strong><span>${escaparHTML(facturaActual.comprador.correo)}</span></p>
+        <p><strong>Tel&eacute;fono</strong><span>${escaparHTML(facturaActual.comprador.telefono)}</span></p>
+      </section>
+
+      <section class="receipt-card receipt-event">
+        <span class="receipt-card-label">Evento</span>
+        <p><strong>Nombre del evento</strong><span>${escaparHTML(facturaActual.evento)}</span></p>
+        <p><strong>Fecha</strong><span>${escaparHTML(facturaActual.fechaEvento)}</span></p>
+        <p><strong>Lugar</strong><span>${escaparHTML(facturaActual.lugar)}</span></p>
+      </section>
+
+      <section class="receipt-card receipt-payment">
+        <span class="receipt-card-label">Pago</span>
+        <p><strong>M&eacute;todo</strong><span>${escaparHTML(facturaActual.metodoPago)}</span></p>
+        <p><strong>Estado</strong><span>${escaparHTML(facturaActual.estadoPago)}</span></p>
+      </section>
+
+      <section class="receipt-card receipt-detail">
+        <span class="receipt-card-label">Detalle de compra</span>
+        <div class="receipt-line"><span>Asientos seleccionados</span><strong>${escaparHTML(facturaActual.asientos.join(", "))}</strong></div>
+        <div class="receipt-line"><span>Cantidad</span><strong>${facturaActual.cantidad}</strong></div>
+        <div class="receipt-line"><span>Precio unitario</span><strong>${formatearMoneda(facturaActual.precioUnitario)}</strong></div>
+        <div class="receipt-line"><span>Subtotal</span><strong>${formatearMoneda(facturaActual.subtotal)}</strong></div>
+        <div class="receipt-line"><span>IVA</span><strong>${formatearMoneda(facturaActual.iva)}</strong></div>
+      </section>
+
+      <section class="receipt-total-card">
+        <span>TOTAL PAGADO</span>
+        <strong>${formatearMoneda(facturaActual.total)}</strong>
+      </section>
+
+      <section class="receipt-qr">
+        <span>PASE DE INGRESO</span>
+        <img id="qrFactura" src="${qrSrc}" alt="Codigo QR de la factura">
+        <p>Presenta este c&oacute;digo en el acceso al evento</p>
+      </section>
+    </article>
+  `;
+
+  document.getElementById("lista").innerHTML = resumenCompra;
+  document.getElementById("qr").src = qrSrc;
+
+  mostrar("resultado");
+}
+
+function pagar() {
+  abrirPasarelaPSE();
+}
+function descargarPDF() {
+  const qr = document.getElementById("qr").src;
+  const factura = facturaActual || JSON.parse(localStorage.getItem("factura_actual") || "null");
+
+  if (!qr || !factura) {
+    alert("Primero realiza una compra para generar la factura.");
+    return;
+  }
+
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert("No se pudo cargar el generador de PDF. Revisa tu conexion a internet e intenta de nuevo.");
+    return;
+  }
+
+  fetch(qr)
+    .then(respuesta => respuesta.blob())
+    .then(blob => new Promise(resolve => {
+      let lector = new FileReader();
+      lector.onloadend = () => resolve(lector.result);
+      lector.readAsDataURL(blob);
+    }))
+    .then(qrBase64 => {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF();
+      const rojo = [122, 0, 24];
+      const fucsia = [255, 0, 77];
+      const gris = [75, 75, 75];
+
+      function texto(label, valor, x, y, ancho = 76) {
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(...rojo);
+        pdf.setFontSize(9);
+        pdf.text(label, x, y);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(25, 25, 25);
+        pdf.setFontSize(10);
+        const lineas = pdf.splitTextToSize(String(valor || "No registrado"), ancho);
+        pdf.text(lineas, x, y + 5);
+        return y + 8 + (lineas.length * 5);
+      }
+
+      pdf.setFillColor(8, 8, 8);
+      pdf.rect(0, 0, 210, 34, "F");
+      pdf.setFillColor(...rojo);
+      pdf.rect(0, 30, 210, 4, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(21);
+      pdf.text("Focus Producciones", 16, 16);
+      pdf.setFontSize(10);
+      pdf.setTextColor(255, 210, 220);
+      pdf.text("Factura / Entrada digital", 16, 25);
+
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(...rojo);
+      pdf.roundedRect(14, 44, 182, 218, 5, 5, "S");
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(...rojo);
+      pdf.setFontSize(16);
+      pdf.text("Factura preparada", 24, 58);
+      pdf.setFontSize(9);
+      pdf.setTextColor(...gris);
+      pdf.text("No. " + factura.numero, 24, 66);
+      pdf.text("Emitida: " + factura.fechaEmision, 112, 66);
+
+      pdf.setDrawColor(235, 235, 235);
+      pdf.line(24, 74, 186, 74);
+
+      pdf.setFillColor(250, 244, 246);
+      pdf.roundedRect(24, 82, 78, 58, 4, 4, "F");
+      pdf.roundedRect(108, 82, 78, 58, 4, 4, "F");
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(...rojo);
+      pdf.setFontSize(11);
+      pdf.text("Comprador", 30, 94);
+      let yComprador = 102;
+      yComprador = texto("Nombre", factura.comprador.nombre, 30, yComprador, 62);
+      yComprador = texto("Documento", factura.comprador.documento, 30, yComprador, 62);
+      texto("Correo", factura.comprador.correo, 30, yComprador, 62);
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(...rojo);
+      pdf.setFontSize(11);
+      pdf.text("Evento", 114, 94);
+      let yEvento = 102;
+      yEvento = texto("Nombre", factura.evento, 114, yEvento, 62);
+      yEvento = texto("Fecha", factura.fechaEvento, 114, yEvento, 62);
+      texto("Lugar", factura.lugar, 114, yEvento, 62);
+
+      pdf.setFillColor(13, 13, 13);
+      pdf.roundedRect(24, 150, 162, 42, 4, 4, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.text("Detalle de compra", 32, 162);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      pdf.text("Asientos: " + factura.asientos.join(", "), 32, 172);
+      pdf.text("Cantidad: " + factura.cantidad + " boleta(s)", 32, 181);
+      pdf.setTextColor(255, 175, 195);
+      pdf.text("Metodo de pago: " + factura.metodoPago + "  |  Estado: " + factura.estadoPago, 32, 189);
+
+      pdf.setFillColor(250, 244, 246);
+      pdf.roundedRect(24, 202, 86, 58, 4, 4, "F");
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(...rojo);
+      pdf.setFontSize(11);
+      pdf.text("Resumen economico", 32, 215);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(25, 25, 25);
+      pdf.setFontSize(10);
+      pdf.text("Precio unitario: " + formatearMoneda(factura.precioUnitario), 32, 226);
+      pdf.text("Subtotal: " + formatearMoneda(factura.subtotal), 32, 235);
+      pdf.text("IVA: " + formatearMoneda(factura.iva), 32, 244);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(...fucsia);
+      pdf.setFontSize(13);
+      pdf.text("Total: " + formatearMoneda(factura.total), 32, 255);
+
+      pdf.setDrawColor(...rojo);
+      pdf.roundedRect(122, 202, 64, 58, 4, 4, "S");
+      pdf.addImage(qrBase64, "PNG", 132, 207, 44, 44);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(...rojo);
+      pdf.setFontSize(8);
+      pdf.text("QR de ingreso", 154, 256, { align: "center" });
+
+      pdf.setFillColor(...rojo);
+      pdf.rect(0, 282, 210, 15, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      pdf.text("Presenta esta factura y el codigo QR al ingresar al evento.", 105, 291, { align: "center" });
+
+      pdf.save("factura-focus-producciones.pdf");
+    })
+    .catch(() => {
+      alert("No se pudo generar el PDF. Intenta nuevamente.");
+    });
 }

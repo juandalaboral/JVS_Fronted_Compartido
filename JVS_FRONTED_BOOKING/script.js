@@ -1,5 +1,7 @@
 let artistaIdActual = "";
 let riderFiltroActual = null;
+const API_EVENTOS_URL = 'http://127.0.0.1:5000/api/eventos';
+const IMAGEN_EVENTO_SQLITE = 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=900&q=80';
 
 const EVENTOS_BASE = [
     { id: 'art1', n: 'Feid' },
@@ -25,6 +27,69 @@ const LOCALIDADES_EVENTO = [
 
 function obtenerEventosPublicados() {
     return JSON.parse(localStorage.getItem('eventos_publicados')) || [];
+}
+function esEventoSQLite(evento) {
+    return evento && evento.origen === 'sqlite';
+}
+
+function normalizarFechaSQLite(fecha = '') {
+    if (!fecha) return 'Fecha por definir';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
+    return formatearFechaEvento(fecha);
+}
+
+function crearEventoBookingDesdeAPI(evento) {
+    const funciones = Array.isArray(evento.funciones) ? evento.funciones : [];
+    const primeraFuncion = funciones[0] || {};
+    const lugar = evento.lugar || primeraFuncion.lugar || 'Movistar Arena';
+    const fechas = funciones.length
+        ? funciones.map(funcion => `${normalizarFechaSQLite(funcion.fecha || evento.fecha)} - ${funcion.lugar || lugar}`)
+        : [`${normalizarFechaSQLite(evento.fecha)} - ${lugar}`];
+    const horaBase = primeraFuncion.hora || evento.hora || '08:00 PM';
+
+    return {
+        id: 'sqlite_' + evento.id,
+        sqliteId: evento.id,
+        origen: 'sqlite',
+        nombre: evento.nombre || 'Evento SQLite',
+        tipo: evento.tipo || 'Evento SQLite',
+        descripcion: evento.descripcion || evento.Descripcion || '',
+        lugar: lugar,
+        hora: horaBase,
+        horas: funciones.length ? funciones.map(funcion => funcion.hora || horaBase) : [horaBase],
+        fechas: fechas,
+        imagen: evento.imagen || IMAGEN_EVENTO_SQLITE
+    };
+}
+
+async function cargarEventosDesdeAPI() {
+    try {
+        const respuesta = await fetch(API_EVENTOS_URL);
+        if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
+
+        const datos = await respuesta.json();
+        const eventosAPI = Array.isArray(datos) ? datos : (Array.isArray(datos.eventos) ? datos.eventos : []);
+        if (eventosAPI.length === 0) return;
+
+        const eventosActuales = obtenerEventosPublicados();
+        let huboCambios = false;
+
+        eventosAPI.forEach(eventoAPI => {
+            const eventoBooking = crearEventoBookingDesdeAPI(eventoAPI);
+            const existe = eventosActuales.some(evento => evento.id === eventoBooking.id);
+            if (!existe) {
+                eventosActuales.push(eventoBooking);
+                huboCambios = true;
+            }
+        });
+
+        if (huboCambios) guardarEventosPublicados(eventosActuales);
+        renderEventosPublicados();
+        actualizarSelectRider();
+        actualizarTablaRider();
+    } catch (error) {
+        console.warn('No se pudieron cargar eventos desde SQLite/Flask:', error);
+    }
 }
 
 function obtenerEventosBaseEliminados() {
@@ -57,28 +122,31 @@ function obtenerTodosEventos() {
 }
 
 function crearTarjetaEvento(evento) {
-    const fechas = evento.fechas.map(fecha => `<li>📅 ${fecha}</li>`).join('');
+    const fechas = evento.fechas.map(fecha => `<li>&#128197; ${fecha}</li>`).join('');
+    const etiquetaOrigen = esEventoSQLite(evento) ? '<span class="tag-sqlite">SQLite</span>' : '';
+    const descripcion = evento.descripcion ? `<p class="descripcion-evento">${escaparHTML(evento.descripcion)}</p>` : '';
 
     return `
         <div class="artista evento-dinamico" id="${evento.id}">
-            <button class="btn-edit" onclick="abrirEditor('${evento.id}')">⚙️ Cambiar fechas</button>
+            <button class="btn-edit" onclick="abrirEditor('${evento.id}')">&#9881; Cambiar fechas</button>
             <button class="btn-delete-evento" onclick="eliminarEventoPublicado('${evento.id}')">Eliminar</button>
-            <img src="${evento.imagen}" alt="${evento.nombre}">
+            <img src="${evento.imagen}" alt="${escaparHTML(evento.nombre)}">
             <div class="info">
-                <h3>${evento.nombre}</h3>
+                <h3>${escaparHTML(evento.nombre)}</h3>
+                ${etiquetaOrigen}
+                ${descripcion}
                 <div class="agenda">
-                    <p class="disponible">● Agenda disponible</p>
+                    <p class="disponible">&#9679; Agenda disponible</p>
                     <ul class="lista-agenda">
                         ${fechas}
                     </ul>
                 </div>
                 <button class="btn btn-principal" onclick="abrirInvitados('${evento.id}')">Reservar / Invitados</button>
-                <button class="btn" onclick="saltarARaider('${evento.id}')" style="background:#2196F3; font-size:12px;">Ver Rider Técnico</button>
+                <button class="btn" onclick="saltarARaider('${evento.id}')" style="background:#2196F3; font-size:12px;">Ver Rider Tecnico</button>
             </div>
         </div>
     `;
 }
-
 
 function esEventoPublicado(id) {
     return obtenerEventosPublicados().some(evento => evento.id === id);
@@ -363,6 +431,7 @@ function eliminarReservaAdministrador(id) {
     localStorage.setItem('reservas_eventos', JSON.stringify(reservas.filter(item => item.id !== id)));
 }
 window.onload = function () {
+    cargarEventosDesdeAPI();
     prepararBotonesEliminarEventosBase();
     aplicarEventosBaseEliminados();
     renderEventosPublicados();
@@ -479,7 +548,17 @@ function abrirEditor(id) {
     const tarjeta = document.getElementById(id);
     const nombreArt = tarjeta.querySelector('h3').innerText;
     const eventoPublicado = obtenerEventoPublicadoPorId(id);
-    document.getElementById('editTitle').innerText = "Cambiar fechas de: " + nombreArt;
+    document.getElementById('editTitle').innerText = "Editar evento: " + nombreArt;
+
+    const inputImagenUrl = document.getElementById('editEventoImagenUrl');
+    const inputImagenArchivo = document.getElementById('editEventoImagenArchivo');
+    const inputDescripcion = document.getElementById('editEventoDescripcion');
+    const selectUbicacion = document.getElementById('editEventoUbicacion');
+
+    if (inputImagenUrl) inputImagenUrl.value = eventoPublicado ? (eventoPublicado.imagen || '') : '';
+    if (inputImagenArchivo) inputImagenArchivo.value = '';
+    if (inputDescripcion) inputDescripcion.value = eventoPublicado ? (eventoPublicado.descripcion || '') : '';
+    if (selectUbicacion) selectUbicacion.innerHTML = crearOpcionesLugar(eventoPublicado ? (eventoPublicado.lugar || '') : '');
 
     const contenedor = document.getElementById('camposFechasAgenda');
     contenedor.innerHTML = '';
@@ -535,8 +614,12 @@ function guardarAgenda() {
 
     const nuevasFechas = entradasValidas.map(entrada => `${entrada.fecha} - ${entrada.lugar}`);
     const nuevasHoras = entradasValidas.map(entrada => formatearHoraEvento(entrada.hora));
-    const primeraUbicacion = entradasValidas[0].lugar;
+    const ubicacionEditor = document.getElementById('editEventoUbicacion') ? document.getElementById('editEventoUbicacion').value : '';
+    const primeraUbicacion = ubicacionEditor || entradasValidas[0].lugar;
     const primeraHora = nuevasHoras[0];
+    const descripcionEditada = document.getElementById('editEventoDescripcion') ? document.getElementById('editEventoDescripcion').value.trim() : '';
+    const imagenUrlEditada = document.getElementById('editEventoImagenUrl') ? document.getElementById('editEventoImagenUrl').value.trim() : '';
+    const archivoImagenEditada = document.getElementById('editEventoImagenArchivo') ? document.getElementById('editEventoImagenArchivo').files[0] : null;
 
     lista.innerHTML = nuevasFechas.map(fecha => `<li>&#128197; ${fecha}</li>`).join('');
 
@@ -544,28 +627,51 @@ function guardarAgenda() {
         fechas: nuevasFechas,
         horas: nuevasHoras,
         lugar: primeraUbicacion,
-        hora: primeraHora
+        hora: primeraHora,
+        descripcion: descripcionEditada
+    };
+    if (imagenUrlEditada) cambiosAgenda.imagen = imagenUrlEditada;
+
+    const guardarCambiosPublicados = (imagenArchivo = '') => {
+        if (imagenArchivo) cambiosAgenda.imagen = imagenArchivo;
+
+        if (esEventoPublicado(artistaIdActual)) {
+            const eventos = obtenerEventosPublicados().map(evento => {
+                if (evento.id === artistaIdActual) {
+                    evento.fechas = nuevasFechas;
+                    evento.horas = nuevasHoras;
+                    evento.lugar = primeraUbicacion;
+                    evento.hora = primeraHora;
+                    evento.descripcion = descripcionEditada;
+                    if (imagenUrlEditada) evento.imagen = imagenUrlEditada;
+                    if (imagenArchivo) evento.imagen = imagenArchivo;
+                }
+                return evento;
+            });
+            guardarEventosPublicados(eventos);
+            sincronizarEventoVistaUsuario(artistaIdActual, cambiosAgenda);
+            renderEventosPublicados();
+            actualizarSelectRider();
+            actualizarTablaRider();
+        } else {
+            sincronizarEventoBaseVistaUsuario(artistaIdActual, cambiosAgenda);
+        }
+
+        cerrarModal();
     };
 
-    if (esEventoPublicado(artistaIdActual)) {
-        const eventos = obtenerEventosPublicados().map(evento => {
-            if (evento.id === artistaIdActual) {
-                evento.fechas = nuevasFechas;
-                evento.horas = nuevasHoras;
-                evento.lugar = primeraUbicacion;
-                evento.hora = primeraHora;
-            }
-            return evento;
-        });
-        guardarEventosPublicados(eventos);
-        sincronizarEventoVistaUsuario(artistaIdActual, cambiosAgenda);
-    } else {
-        sincronizarEventoBaseVistaUsuario(artistaIdActual, cambiosAgenda);
+    if (archivoImagenEditada && esEventoPublicado(artistaIdActual)) {
+        const lector = new FileReader();
+        lector.onload = function(e) {
+            guardarCambiosPublicados(e.target.result);
+        };
+        lector.readAsDataURL(archivoImagenEditada);
+        return;
     }
 
-    cerrarModal();
+    guardarCambiosPublicados();
 }
-// --- LÓGICA DE INVITADOS ---
+// --- Lógica de Invitados ---
 function abrirInvitados(id) {
     artistaIdActual = id;
     const nombreArt = document.getElementById(id).querySelector('h3').innerText;

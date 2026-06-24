@@ -209,6 +209,11 @@
 <div id="miModal" class="modal">
     <div class="modal-content">
         <h2 id="editTitle">Modificar Fechas</h2>
+        <div class="editor-evento-meta">
+            <label>Subir nueva imagen<input type="file" id="editEventoImagenArchivo" accept="image/*"></label>
+            <label>Ubicación principal<select id="editEventoUbicacion"></select></label>
+            <label class="editor-descripcion">Descripción<textarea id="editEventoDescripcion" rows="4" placeholder="Descripción larga del evento"></textarea></label>
+        </div>
         <div id="camposFechasAgenda" class="campos-fechas-agenda"></div>
         <button class="btn" onclick="agregarCampoFecha()" style="background:#2196F3;">+ Agregar fecha</button>
         <button class="btn" onclick="guardarAgenda()" style="background:#4CAF50;">Guardar</button>

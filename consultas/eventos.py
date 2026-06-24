@@ -17,7 +17,7 @@ def listar_eventos():
     
     # Seleccionamos solo las columnas seguras que sí existen en tu Módulo 2
     cursor.execute("""
-        SELECT Evento_Id, Nombre, Fecha 
+        SELECT Evento_Id, Nombre, Fecha, Descripcion
         FROM Evento
     """)
     
@@ -32,7 +32,7 @@ def buscar_evento(evento_id):
     cursor = conexion.cursor()
     
     cursor.execute("""
-        SELECT Evento_Id, Nombre, Fecha 
+        SELECT Evento_Id, Nombre, Fecha, Descripcion
         FROM Evento 
         WHERE Evento_Id = ?
     """, (evento_id,))

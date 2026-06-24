@@ -5,7 +5,10 @@
 function mostrar(id) {
   document.querySelectorAll(".modulo").forEach(m => m.classList.remove("active"));
   document.getElementById(id).classList.add("active");
-  if (id === "eventos") renderCarteleraPublicada();
+  if (id === 'eventos') {
+    renderCarteleraPublicada();
+    cargarEventosAPI();
+  }
 }
 
 function volverAdministrador() {
@@ -766,3 +769,64 @@ function descargarPDF() {
       alert("No se pudo generar el PDF. Intenta nuevamente.");
     });
 }
+
+let eventosAPI = [];
+
+function normalizarEventoAPI(evento) {
+  const funciones = Array.isArray(evento.funciones) ? evento.funciones : [];
+  const fechas = funciones.map(funcion => {
+    const fecha = funcion.fecha || evento.fecha || "Fecha no registrada";
+    return funcion.lugar ? `${fecha} - ${funcion.lugar}` : fecha;
+  });
+  const primeraFuncion = funciones[0] || {};
+
+  return {
+    id: `api_${evento.id}`,
+    apiId: evento.id,
+    nombre: evento.nombre || "Evento",
+    fecha: evento.fecha || primeraFuncion.fecha || "Fecha no registrada",
+    hora: primeraFuncion.hora || evento.hora || "Hora no registrada",
+    lugar: primeraFuncion.lugar || evento.lugar || "Ubicacion no registrada",
+    fechas: fechas.length ? fechas : [evento.fecha || "Fecha no registrada"],
+    tipo: "Evento SQLite",
+    img: "imagenes/doom.jpg.jpg",
+    descripcionGeneral: evento.descripcion || evento.Descripcion || "Evento cargado desde SQLite mediante Flask. La informacion proviene directamente de la base de datos boleteria.db."
+  };
+}
+
+async function cargarEventosAPI() {
+  const contenedor = document.getElementById("listaEventosUsuario");
+  if (!contenedor) return;
+
+  try {
+    const respuesta = await fetch("http://127.0.0.1:5000/api/eventos");
+    if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+
+    const datos = await respuesta.json();
+    if (!datos.ok || !Array.isArray(datos.eventos)) return;
+
+    eventosAPI = datos.eventos.map(normalizarEventoAPI);
+    contenedor.querySelectorAll(".evento-api").forEach(evento => evento.remove());
+
+    eventosAPI.forEach(evento => {
+      contenedor.insertAdjacentHTML("beforeend", `
+        <div class="evento evento-api" data-event-id="${escaparHTML(evento.id)}">
+          <img src="${escaparHTML(evento.img)}" alt="${escaparHTML(evento.nombre)}">
+          <h3>${escaparHTML(evento.nombre)}</h3>
+          <div class="event-card-actions">
+            <button onclick="verEventoAPI('${escaparHTML(evento.id)}')">Ver Evento</button>
+          </div>
+        </div>
+      `);
+    });
+  } catch (error) {
+    console.warn("No se pudieron cargar eventos desde Flask:", error);
+  }
+}
+
+function verEventoAPI(id) {
+  const evento = eventosAPI.find(item => item.id === id);
+  if (evento) abrirModalEvento(evento);
+}
+
+cargarEventosAPI();

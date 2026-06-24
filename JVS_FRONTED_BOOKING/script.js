@@ -1,6 +1,7 @@
 let artistaIdActual = "";
 let riderFiltroActual = null;
 const API_EVENTOS_URL = 'http://127.0.0.1:5000/api/eventos';
+function urlActualizarEventoSQLite(id) { return API_EVENTOS_URL + '/' + id; }
 const IMAGEN_EVENTO_SQLITE = 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=900&q=80';
 
 const EVENTOS_BASE = [
@@ -76,8 +77,11 @@ async function cargarEventosDesdeAPI() {
 
         eventosAPI.forEach(eventoAPI => {
             const eventoBooking = crearEventoBookingDesdeAPI(eventoAPI);
-            const existe = eventosActuales.some(evento => evento.id === eventoBooking.id);
-            if (!existe) {
+            const indice = eventosActuales.findIndex(evento => evento.id === eventoBooking.id);
+            if (indice >= 0) {
+                eventosActuales[indice] = Object.assign({}, eventosActuales[indice], eventoBooking);
+                huboCambios = true;
+            } else {
                 eventosActuales.push(eventoBooking);
                 huboCambios = true;
             }
@@ -308,6 +312,36 @@ function sincronizarEventoVistaUsuario(id, cambios) {
 
     if (actualizado) {
         localStorage.setItem('cartelera_usuario', JSON.stringify(nuevaCartelera));
+    }
+}
+async function actualizarEventoSQLite(evento) {
+    if (!esEventoSQLite(evento) || !evento.sqliteId) return;
+
+    const agenda = (evento.fechas || []).map((fecha, index) => {
+        const datosFecha = separarFechaLugar(fecha);
+        return {
+            fecha: datosFecha.fecha,
+            lugar: datosFecha.lugar || evento.lugar,
+            hora: evento.horas && evento.horas[index] ? evento.horas[index] : evento.hora
+        };
+    });
+
+    const respuesta = await fetch(urlActualizarEventoSQLite(evento.sqliteId), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            nombre: evento.nombre,
+            descripcion: evento.descripcion || '',
+            lugar: evento.lugar || '',
+            hora: evento.hora || '',
+            imagen: evento.imagen || '',
+            agenda: agenda
+        })
+    });
+
+    const resultado = await respuesta.json();
+    if (!respuesta.ok || !resultado.ok) {
+        throw new Error(resultado.error || 'No se pudo actualizar el evento en SQLite.');
     }
 }
 function formatearFechaEvento(valor) {
@@ -636,6 +670,7 @@ function guardarAgenda() {
         if (imagenArchivo) cambiosAgenda.imagen = imagenArchivo;
 
         if (esEventoPublicado(artistaIdActual)) {
+            let eventoActualizado = null;
             const eventos = obtenerEventosPublicados().map(evento => {
                 if (evento.id === artistaIdActual) {
                     evento.fechas = nuevasFechas;
@@ -645,11 +680,16 @@ function guardarAgenda() {
                     evento.descripcion = descripcionEditada;
                     if (imagenUrlEditada) evento.imagen = imagenUrlEditada;
                     if (imagenArchivo) evento.imagen = imagenArchivo;
+                    eventoActualizado = evento;
                 }
                 return evento;
             });
             guardarEventosPublicados(eventos);
             sincronizarEventoVistaUsuario(artistaIdActual, cambiosAgenda);
+            if (eventoActualizado && esEventoSQLite(eventoActualizado)) {
+                actualizarEventoSQLite(eventoActualizado)
+                    .catch(error => alert(error.message || 'No se pudo actualizar SQLite.'));
+            }
             renderEventosPublicados();
             actualizarSelectRider();
             actualizarTablaRider();

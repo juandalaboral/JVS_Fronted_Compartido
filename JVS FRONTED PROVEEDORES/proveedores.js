@@ -97,6 +97,7 @@ function eventoListoParaCartelera(eventId) {
 }
 
 function eventoEnCartelera(id) {
+  if (data[id] && data[id].enCartelera === true) return true;
   return (JSON.parse(localStorage.getItem("cartelera_usuario")) || [])
     .some(evento => evento.id === id);
 }
@@ -145,11 +146,14 @@ function mandarACartelera(eventId) {
     hora: evento.hora || "",
     fechas: evento.fechas || [],
     empresas: data[eventId].empresas,
-    personal: data[eventId].personal
+    personal: data[eventId].personal,
+    enCartelera: true
   };
 
   const actualizada = cartelera.filter(item => item.id !== eventId);
   actualizada.push(publicado);
+  data[eventId].enCartelera = true;
+  guardarDatos();
   localStorage.setItem("cartelera_usuario", JSON.stringify(actualizada));
   alert("Evento enviado a la cartelera de usuario.");
   renderEventList();

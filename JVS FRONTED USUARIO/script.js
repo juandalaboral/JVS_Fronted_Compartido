@@ -1,3 +1,6 @@
+const API_USUARIOS_URL = "http://127.0.0.1:5000/api/usuarios";
+const API_ASIENTOS_OCUPADOS_URL = "http://127.0.0.1:5000/api/asientos-ocupados";
+
 /* ========================
    NAVEGACIÓN ENTRE MÓDULOS
    ======================== */
@@ -8,6 +11,9 @@ function mostrar(id) {
   if (id === 'eventos') {
     renderCarteleraPublicada();
     cargarEventosAPI();
+  }
+  if (id === 'mapa') {
+    prepararMapaAsientos();
   }
 }
 
@@ -47,6 +53,52 @@ function login() {
     document.getElementById("loader").style.display = "none";
     mostrar("eventos");
   }, 1200);
+}
+async function registrarUsuario() {
+  const mensaje = document.getElementById("registroMensaje");
+  const datos = {
+    nombre: document.getElementById("registroNombre").value.trim(),
+    apellido: document.getElementById("registroApellido").value.trim(),
+    correo: document.getElementById("registroCorreo").value.trim(),
+    telefono: document.getElementById("registroTelefono").value.trim(),
+    pais: document.getElementById("pais").value,
+    ciudad: document.getElementById("ciudad").value,
+    contrasena: document.getElementById("pass").value.trim()
+  };
+
+  if (!datos.nombre || !datos.apellido || !datos.correo || !datos.telefono || !datos.pais || !datos.ciudad || !datos.contrasena) {
+    mensaje.innerText = "Completa todos los campos para registrarte.";
+    mensaje.className = "registro-mensaje error";
+    return;
+  }
+
+  try {
+    mensaje.innerText = "Registrando usuario...";
+    mensaje.className = "registro-mensaje";
+
+    const respuesta = await fetch(API_USUARIOS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(datos)
+    });
+
+    const resultado = await respuesta.json();
+    if (!respuesta.ok || !resultado.ok) {
+      throw new Error(resultado.error || "No se pudo registrar el usuario.");
+    }
+
+    mensaje.innerText = "Usuario registrado correctamente.";
+    mensaje.className = "registro-mensaje exito";
+
+    document.getElementById("registroNombre").value = "";
+    document.getElementById("registroApellido").value = "";
+    document.getElementById("registroCorreo").value = "";
+    document.getElementById("registroTelefono").value = "";
+    document.getElementById("pass").value = "";
+  } catch (error) {
+    mensaje.innerText = error.message || "No se pudo conectar con el servidor.";
+    mensaje.className = "registro-mensaje error";
+  }
 }
 
 /* ========================
@@ -297,9 +349,41 @@ function verEventoBase(clave) {
   });
 }
 
+function buscarEventoPublicado(id) {
+  const idBuscado = String(id);
+  const cartelera = obtenerCarteleraVigente();
+  const desdeCartelera = cartelera.find(item => String(item.id) === idBuscado);
+  if (desdeCartelera) return desdeCartelera;
+
+  const eventosBooking = obtenerJSON("eventos_publicados");
+  const proveedoresData = JSON.parse(localStorage.getItem("proveedores_data") || "{}");
+  const desdeBooking = eventosBooking.find(item => String(item.id) === idBuscado);
+  if (desdeBooking) {
+    const gestion = proveedoresData[idBuscado] || {};
+    return {
+      id: desdeBooking.id,
+      nombre: desdeBooking.nombre,
+      img: desdeBooking.imagen || desdeBooking.img,
+      tipo: desdeBooking.tipo || "Evento",
+      lugar: desdeBooking.lugar || separarFechaLugar((desdeBooking.fechas || [""])[0]).lugar,
+      hora: desdeBooking.hora || "",
+      fechas: desdeBooking.fechas || [],
+      empresas: gestion.empresas || [],
+      personal: gestion.personal || [],
+      enCartelera: gestion.enCartelera === true
+    };
+  }
+
+  return null;
+}
 function verEventoPublicado(id) {
-  const evento = obtenerCarteleraVigente().find(item => item.id === id);
-  if (evento) abrirModalEvento(evento);
+  const evento = buscarEventoPublicado(id);
+  if (evento) {
+    abrirModalEvento(evento);
+    return;
+  }
+
+  alert("No se encontro la informacion del evento. Vuelve a enviarlo desde Proveedores a cartelera.");
 }
 
 window.addEventListener("keydown", function(event) {
@@ -321,21 +405,53 @@ function ocultarEventosBaseEliminados() {
     tarjeta.style.display = eliminados.includes(tarjeta.dataset.eventId) ? "none" : "";
   });
 }
+function obtenerEventosEnviadosDesdeProveedores() {
+  let proveedoresData = JSON.parse(localStorage.getItem("proveedores_data") || "{}");
+  let eventosBooking = obtenerJSON("eventos_publicados");
+
+  return eventosBooking
+    .filter(evento => {
+      let gestion = proveedoresData[evento.id];
+      if (!gestion) return false;
+      return gestion.enCartelera === true;
+    })
+    .map(evento => {
+      let gestion = proveedoresData[evento.id] || {};
+      return {
+        id: evento.id,
+        nombre: evento.nombre,
+        img: evento.imagen || evento.img,
+        tipo: evento.tipo || "Evento",
+        lugar: evento.lugar || separarFechaLugar((evento.fechas || [""])[0]).lugar,
+        hora: evento.hora || "",
+        fechas: evento.fechas || [],
+        empresas: gestion.empresas || [],
+        personal: gestion.personal || [],
+        enCartelera: true
+      };
+    });
+}
+
+function unirCarteleraSinDuplicados(cartelera, enviados) {
+  let mapa = new Map();
+  cartelera.forEach(evento => mapa.set(evento.id, evento));
+  enviados.forEach(evento => mapa.set(evento.id, Object.assign({}, mapa.get(evento.id) || {}, evento)));
+  return Array.from(mapa.values());
+}
 
 function obtenerCarteleraVigente() {
   let cartelera = obtenerJSON("cartelera_usuario");
   let eventosBooking = obtenerJSON("eventos_publicados");
   let idsBooking = eventosBooking.map(evento => evento.id);
+  let enviadosProveedores = obtenerEventosEnviadosDesdeProveedores();
+  let carteleraUnida = unirCarteleraSinDuplicados(cartelera, enviadosProveedores);
 
-  let vigente = cartelera.filter(evento => {
-    if (!String(evento.id).startsWith("evento_")) return false;
+  let vigente = carteleraUnida.filter(evento => {
+    if (evento.enCartelera === true) return true;
     return idsBooking.includes(evento.id);
   });
 
-  if (vigente.length !== cartelera.length) {
-    localStorage.setItem("cartelera_usuario", JSON.stringify(vigente));
-  }
-
+  localStorage.setItem("cartelera_usuario", JSON.stringify(vigente));
   return vigente;
 }
 
@@ -364,7 +480,7 @@ function renderCarteleraPublicada() {
 renderCarteleraPublicada();
 
 window.addEventListener("storage", function(event) {
-  if (["cartelera_usuario", "eventos_publicados", "eventos_base_eliminados", "eventos_base_agenda"].includes(event.key)) {
+  if (["cartelera_usuario", "eventos_publicados", "proveedores_data", "eventos_base_eliminados", "eventos_base_agenda"].includes(event.key)) {
     renderCarteleraPublicada();
   }
 });
@@ -378,25 +494,114 @@ let ultimaCompra = "";
 let facturaActual = null;
 const PRECIO_UNITARIO_BOLETA = 85000;
 const IVA_FACTURA = 0.19;
+const CLAVE_ASIENTOS_OCUPADOS = "asientos_ocupados_eventos";
+
+function obtenerClaveCompraAsientos() {
+  const compra = obtenerCompraSeleccionada();
+  const evento = compra.evento || "Evento";
+  const fecha = compra.fecha || "Fecha no seleccionada";
+  return `${evento}__${fecha}`.toLowerCase().replace(/\s+/g, "_");
+}
+
+function obtenerAsientosOcupados() {
+  return JSON.parse(localStorage.getItem(CLAVE_ASIENTOS_OCUPADOS) || "{}");
+}
+
+function guardarAsientosOcupados(registro) {
+  localStorage.setItem(CLAVE_ASIENTOS_OCUPADOS, JSON.stringify(registro));
+}
+
+function obtenerOcupadosCompraActual() {
+  const registro = obtenerAsientosOcupados();
+  return registro[obtenerClaveCompraAsientos()] || [];
+}
+
+function datosConsultaAsientos() {
+  const compra = obtenerCompraSeleccionada();
+  return {
+    evento: compra.evento || "Evento",
+    fecha: compra.fecha || "Fecha no seleccionada",
+    evento_id: compra.eventoId || compra.apiId || "",
+    funcion_id: compra.funcionId || ""
+  };
+}
+
+async function consultarOcupadosSQLite() {
+  const datos = datosConsultaAsientos();
+  const params = new URLSearchParams();
+  Object.keys(datos).forEach(clave => {
+    if (datos[clave]) params.append(clave, datos[clave]);
+  });
+
+  const respuesta = await fetch(`${API_ASIENTOS_OCUPADOS_URL}?${params.toString()}`);
+  const resultado = await respuesta.json();
+  if (!respuesta.ok || !resultado.ok) {
+    throw new Error(resultado.error || "No se pudieron consultar los asientos ocupados.");
+  }
+  return resultado.asientos || [];
+}
+
+async function registrarOcupadosSQLite(asientos) {
+  const datos = datosConsultaAsientos();
+  const respuesta = await fetch(API_ASIENTOS_OCUPADOS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(Object.assign({}, datos, { asientos }))
+  });
+  const resultado = await respuesta.json();
+  if (!respuesta.ok || !resultado.ok) {
+    throw new Error(resultado.error || "No se pudieron registrar los asientos ocupados.");
+  }
+  return resultado.asientos || [];
+}
+
+function nombreAsiento(codigo = "") {
+  const partes = String(codigo).split("-");
+  const zona = partes[0] || "";
+  const silla = partes[1] || codigo;
+  const nombresZona = {
+    graderia1: "Graderia Izquierda",
+    vip: "VIP",
+    graderia2: "Graderia Derecha"
+  };
+  return `${nombresZona[zona] || zona} ${silla}`.trim();
+}
+
+function textoAsientosSeleccionados() {
+  return seleccionados.map(nombreAsiento).join(", ");
+}
+function actualizarResumenAsientos() {
+  const contador = document.getElementById("contadorAsientos");
+  const total = document.getElementById("totalBoletasAsientos");
+  if (contador) contador.innerText = seleccionados.length;
+  if (total) total.innerText = seleccionados.length;
+}
 
 function crearAsientos(zona) {
   let letras = ["A", "B", "C", "D"];
-  let cont   = document.getElementById(zona);
+  let cont = document.getElementById(zona);
+  if (!cont) return;
 
   for (let l of letras) {
     for (let i = 1; i <= 5; i++) {
-      let a       = document.createElement("div");
+      let a = document.createElement("button");
+      const codigo = `${zona}-${l}${i}`;
+      a.type = "button";
       a.className = "asiento";
+      a.dataset.asiento = codigo;
       a.innerText = l + i;
+      a.setAttribute("aria-label", `Asiento ${l}${i} ${zona}`);
 
       a.onclick = function () {
-        this.classList.toggle("seleccionado");
+        if (this.classList.contains("ocupado")) return;
 
+        this.classList.toggle("seleccionado");
         if (this.classList.contains("seleccionado")) {
-          seleccionados.push(this.innerText);
+          if (!seleccionados.includes(codigo)) seleccionados.push(codigo);
         } else {
-          seleccionados = seleccionados.filter(x => x !== this.innerText);
+          seleccionados = seleccionados.filter(x => x !== codigo);
         }
+        actualizarResumenAsientos();
       };
 
       cont.appendChild(a);
@@ -404,9 +609,61 @@ function crearAsientos(zona) {
   }
 }
 
+function aplicarAsientosOcupados(ocupados) {
+  document.querySelectorAll(".asiento").forEach(asiento => {
+    asiento.classList.remove("seleccionado", "ocupado");
+    asiento.disabled = false;
+    asiento.title = "Disponible";
+
+    if (ocupados.includes(asiento.dataset.asiento)) {
+      asiento.classList.add("ocupado");
+      asiento.disabled = true;
+      asiento.title = "No disponible";
+    }
+  });
+}
+
+async function prepararMapaAsientos() {
+  seleccionados = [];
+  aplicarAsientosOcupados(obtenerOcupadosCompraActual());
+  actualizarResumenAsientos();
+
+  try {
+    const ocupadosSQLite = await consultarOcupadosSQLite();
+    const registro = obtenerAsientosOcupados();
+    registro[obtenerClaveCompraAsientos()] = ocupadosSQLite;
+    guardarAsientosOcupados(registro);
+    aplicarAsientosOcupados(ocupadosSQLite);
+    actualizarResumenAsientos();
+  } catch (error) {
+    console.warn(error.message || "No se pudieron cargar asientos desde SQLite.");
+  }
+}
+
+async function bloquearAsientosComprados() {
+  const comprados = seleccionados.slice();
+  const registro = obtenerAsientosOcupados();
+  const clave = obtenerClaveCompraAsientos();
+  const actuales = new Set(registro[clave] || []);
+  comprados.forEach(asiento => actuales.add(asiento));
+  registro[clave] = Array.from(actuales);
+  guardarAsientosOcupados(registro);
+
+  try {
+    const ocupadosSQLite = await registrarOcupadosSQLite(comprados);
+    registro[clave] = ocupadosSQLite;
+    guardarAsientosOcupados(registro);
+  } catch (error) {
+    console.warn(error.message || "No se pudieron registrar asientos en SQLite.");
+  }
+
+  prepararMapaAsientos();
+}
+
 crearAsientos("graderia1");
 crearAsientos("graderia2");
 crearAsientos("vip");
+actualizarResumenAsientos();
 
 /* ========================
    PAGO
@@ -446,7 +703,7 @@ function renderPasarelaPSE() {
     <p><strong>Evento</strong><span>${escaparHTML(compra.evento || "Evento")}</span></p>
     <p><strong>Fecha seleccionada</strong><span>${escaparHTML(fechaCompra)}</span></p>
     <p><strong>Lugar</strong><span>${escaparHTML(lugarCompra)}</span></p>
-    <p><strong>Asientos seleccionados</strong><span>${escaparHTML(seleccionados.join(", "))}</span></p>
+    <p><strong>Asientos seleccionados</strong><span>${escaparHTML(textoAsientosSeleccionados())}</span></p>
     <p><strong>Cantidad de boletas</strong><span>${valores.cantidad}</span></p>
   `;
 
@@ -515,7 +772,7 @@ function construirFacturaLocal(datosComprador) {
     evento: compra.evento || "Evento",
     fechaEvento: fechaCompra,
     lugar: lugarCompra,
-    asientos: seleccionados.slice(),
+    asientos: seleccionados.map(nombreAsiento),
     cantidad: valores.cantidad,
     precioUnitario: valores.precioUnitario,
     subtotal: valores.subtotal,
@@ -544,11 +801,12 @@ function construirTextoQRFactura(factura) {
     "Total: " + formatearMoneda(factura.total)
   ].join("\n");
 }
-function confirmarPagoPSE() {
+async function confirmarPagoPSE() {
   const datosComprador = obtenerDatosCompradorPSE();
   if (!validarDatosCompradorPSE(datosComprador)) return;
 
   facturaActual = construirFacturaLocal(datosComprador);
+  await bloquearAsientosComprados();
   localStorage.setItem("factura_actual", JSON.stringify(facturaActual));
 
   const compras = obtenerJSON("compras_locales");

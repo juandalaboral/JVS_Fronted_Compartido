@@ -37,15 +37,14 @@
 <div id="registro" class="modulo">
 
   <h2>Registro</h2>
-
-  <input placeholder="Nombre">
-  <input placeholder="Apellidos">
-  <input type="email" placeholder="Correo">
+  <input id="registroNombre" placeholder="Nombre">
+  <input id="registroApellido" placeholder="Apellidos">
+  <input id="registroCorreo" type="email" placeholder="Correo">
 
   <input id="pass" type="password" placeholder="Contraseña">
   <button onclick="togglePass()">Mostrar / Ocultar</button>
 
-  <input placeholder="Teléfono">
+  <input id="registroTelefono" placeholder="Teléfono">
 
   <select id="pais" onchange="ciudades()">
     <option>Colombia</option>
@@ -57,6 +56,8 @@
 
   <select id="ciudad"></select>
 
+  <p id="registroMensaje" class="registro-mensaje"></p>
+  <button onclick="registrarUsuario()">Registrarme</button>
   <button onclick="mostrar('login')">Volver</button>
 
 </div>
@@ -172,7 +173,24 @@
 
   <h2>Seleccionar Asientos</h2>
 
-  <div class="escenario">ESCENARIO</div>
+  <section class="seat-dashboard">
+    <div>
+      <span class="seat-dashboard__label">Asientos seleccionados</span>
+      <strong id="contadorAsientos">0</strong>
+    </div>
+    <div>
+      <span class="seat-dashboard__label">Total de boletas</span>
+      <strong id="totalBoletasAsientos">0</strong>
+    </div>
+  </section>
+
+  <div class="seat-legend" aria-label="Estados de asientos">
+    <span><i class="legend-seat disponible"></i> Disponible</span>
+    <span><i class="legend-seat seleccionado"></i> Seleccionado</span>
+    <span><i class="legend-seat ocupado"></i> No disponible</span>
+  </div>
+
+  <div class="escenario"><span>ESCENARIO</span></div>
 
   <div class="mapa">
     <div class="zona" id="graderia1"><h4>Gradería Izquierda</h4></div>
